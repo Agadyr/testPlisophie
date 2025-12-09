@@ -8,7 +8,7 @@ import { StatsSidebar } from './components/StatsSidebar';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { analyzeQuestion } from './services/geminiService';
-import { Settings, GraduationCap, RotateCcw, ArrowRight, Brain, BookOpen, Clock } from 'lucide-react';
+import { Settings, GraduationCap, RotateCcw, ArrowRight, ArrowLeft, Brain, BookOpen, Clock, Home } from 'lucide-react';
 
 const BATCH_SIZE = 15;
 
@@ -267,6 +267,14 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handlePrevious = () => {
+    if (gameMode === 'EXAM' && quizState.currentQuestionIndex > 0) {
+      setQuizState(prev => ({ ...prev, currentQuestionIndex: prev.currentQuestionIndex - 1 }));
+      setCurrentAnalysis(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const finishQuiz = () => {
     setQuizState(prev => {
       // Calculate Score for Exam
@@ -390,13 +398,26 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowKeyModal(true)}
-            className={`p-2 rounded-full transition-colors ${apiKey ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-            title="Configure API Key"
-          >
-            <Settings size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Home button - only in Practice Mode */}
+            {gameMode === 'PRACTICE' && !quizState.isFinished && (
+              <button
+                onClick={() => setAppMode('WELCOME')}
+                className="p-2 rounded-full text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                title="Return to Home"
+              >
+                <Home size={20} />
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowKeyModal(true)}
+              className={`p-2 rounded-full transition-colors ${apiKey ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              title="Configure API Key"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -452,7 +473,21 @@ const App: React.FC = () => {
               <div className="text-center py-20 text-gray-400">Loading questions...</div>
             )}
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-between pt-4">
+              {/* Show Previous button in Exam Mode */}
+              {gameMode === 'EXAM' && (
+                <button
+                  onClick={handlePrevious}
+                  disabled={quizState.currentQuestionIndex === 0}
+                  className={`flex items-center gap-2 px-8 py-3 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all ${quizState.currentQuestionIndex === 0 ? 'bg-gray-300 cursor-not-allowed' :
+                    subject === 'psychology' ? 'bg-purple-900 hover:bg-purple-950' : 'bg-brand-900 hover:bg-brand-950'
+                    }`}
+                >
+                  <ArrowLeft size={18} />
+                  Previous
+                </button>
+              )}
+
               {/* Show Next button logic depends on Mode */}
               {gameMode === 'EXAM' ? (
                 <button
