@@ -1404,26 +1404,483 @@ high standards
 hard work
 `;
 
+// Answer key data derived from the PDF
+const ANSWER_KEY_RAW = `
+1. The specificity of the mythological worldview:
+Ответ: The unity of man and the world
+2. Philosophical worldview has its own specifics:
+Ответ: all answer are correct
+3. The object of philosophy:
+Ответ: the world and the man
+4. The subject of philosophy is:
+Ответ: the most general laws and patterns of development and functioning of human society, thinking and the universe
+5. The main divisions of philosophy:
+Ответ: Gnoseology, ontology, ethics, aesthetics
+6. Which function doesn’t belong to philosophy:
+Ответ: Scientific
+7. The basic question of philosophy:
+Ответ: What is primary: consciousness or matter?
+8. The other side of the basic question of philosophy:
+Ответ: Relation of thinking to being
+9. Solution of the basic question of philosophy:
+Ответ: Materialism and idealism
+10. Solution of the other side of the basic question of philosophy:
+Ответ: Gnosticism and agnosticism
+11. Metaphysics in philosophy states:
+Ответ: the world is static, unchanging
+12. Dialectics in philosophy states:
+Ответ: the world is flux
+13. Consciousness is state of:
+Ответ: thinking
+14. The central problem of Consciousness:
+Ответ: Mind and body
+15. What does NOT belong to Sensory knowledge?
+Ответ: reasoning
+16. What does NOT belong to Rational knowledge?
+Ответ: intuition
+17. True being according to Plato:
+Ответ: ideas
+18. Being according to Aristotle:
+Ответ: substance
+19. Being according to Heidegger:
+Ответ: existence
+20. Human according to Social Darwinism is:
+Ответ: organism
+21. Human according to Marxism:
+Ответ: social being
+22. Human according to Descartes:
+Ответ: rational being
+23. Moral is an object of study of:
+Ответ: ethics
+24. «Things-in itself» by Kant is:
+Ответ: Things we cannot cognize
+25. «noumena» by Kant is:
+Ответ: Unknowable world
+26. «phenomena» by Kant is
+Ответ: Sensual images of objects
+27. Tengrism can be defined as:
+Ответ: Monotheism
+28. Shamanism is a form of:
+Ответ: Religion
+29. Combination of different Beliefs… is called:
+Ответ: Syncretism
+30. Levy-Bruhl meant:
+Ответ: Magic
+31. Essential cult for Kazakh worldview:
+Ответ: Cult of ancestors
+32. Philosophical system of Marxism:
+Ответ: Dialectical materialism
+33. Central category of Marx’s Historical materialism:
+Ответ: Social-economic formation
+34. Freedom according to Spinoza:
+Ответ: Recognized necessity
+35. Central problem in Kierkegaard’s philosophy:
+Ответ: Human existence
+36. Ethical ideal of Nietzsche:
+Ответ: Superman
+37. Main philosophical categories of Camus:
+Ответ: Absurdity and rebellion
+38. Why Existentialism is humanism (Sartre):
+Ответ: Man himself determines his existence
+39. Layer of psyche discovered by Freud:
+Ответ: Unconscious
+40. Believed the main task was self-knowledge:
+Ответ: Socrates
+41. Translation of “axiology”:
+Ответ: Study of values
+42. Dualism (thinking & extended substances) — philosophy of:
+Ответ: R. Descartes
+43. Theory of scientific knowledge:
+Ответ: Epistemology
+44. Object of philosophy:
+Ответ: World in whole and the place of man in this world
+45. Ethic is:
+Ответ: A study of morality and moral behaviour
+46. Aesthetics is:
+Ответ: A study of beauty and art
+47. First historical type of outlook:
+Ответ: Mythology
+48. Faith in the supernatural forces is:
+Ответ: Religion
+49. Socratic ethical rationalism:
+Ответ: Virtue is knowledge
+50. Outstanding French existentialist:
+Ответ: Albert Camus
+51. Subjective/Objective/Absolute spirit — whose?
+Ответ: Hegel
+52. Ancient Eastern philosophy developed in:
+Ответ: India and China
+53. “Act only on that maxim…” —
+Ответ: the Kant’s Categorical imperative
+54. “Cogito, ergo sum”:
+Ответ: I think, therefore I exist
+55. Universal law in Indian philosophy:
+Ответ: Karma
+56. First Baconian idol:
+Ответ: Tribe
+57. Second Baconian idol:
+Ответ: Cave
+58. Third Baconian idol:
+Ответ: Marketplace
+59. Fourth Baconian idol:
+Ответ: Theatre
+60. Knowledge based on experience:
+Ответ: Empiricism
+61. Kant’s categorical imperative is about:
+Ответ: Moral problems
+62. Translation of “philosophy”:
+Ответ: Love of wisdom
+63. Translation of “Sophist”:
+Ответ: Wise man
+64. “The first teacher”:
+Ответ: Aristotle
+65. Arche of Heraclitus:
+Ответ: Logos (fire)
+66. Arche of Pythagoras:
+Ответ: Numbers
+67. Teaching of Aristotle:
+Ответ: Peripatetism
+68. Renaissance view of human:
+Ответ: Human is a creator, artist, enriched microcosm
+69. “I know that I know nothing”:
+Ответ: Socrates
+70. 5 proofs of God’s existence — author:
+Ответ: Thomas Aquinas
+71. Myth of the Cave — author:
+Ответ: Plato
+72. Theocentrism — center is:
+Ответ: God
+73. Defining characteristic of religious outlook:
+Ответ: Belief in the supernatural forces
+74. Main characteristic of Renaissance:
+Ответ: Anthropocentrism
+75. Creationism:
+Ответ: God
+76. Searching human individuality — philosophy of:
+Ответ: Existentialism
+77. Destinies determined by God:
+Ответ: Providentialism
+78. Psychoanalytic theory — author:
+Ответ: Sigmund Freud
+79. “Thus Spoke Zarathustra” — author:
+Ответ: Nietzsche
+80. Branch studying historical knowledge:
+Ответ: Philosophy of history
+81. Social economic formation — developed by:
+Ответ: Marx
+82. “Either/Or”, “Fear and Trembling” — author:
+Ответ: Kierkegaard
+83. Conscious vs unconscious — indicated by:
+Ответ: Freud
+84. Aesthetic values:
+Ответ: Beauty, art, harmony, style
+85. “God is dead” — said:
+Ответ: Nietzsche
+86. Founders of existentialism:
+Ответ: Camus, Sartre, Kierkegaard
+87. “Man of absurd” (Camus):
+Ответ: Meaningless of existence
+88. “Man of rebellion” (Camus):
+Ответ: I rebel, therefore I exist
+89. “Borderline situations” — awareness of:
+Ответ: His coming death
+90. According to Sartre man is:
+Ответ: A project of himself
+91. “Neurotic” (Freud):
+Ответ: A healthy person with neurotic symptoms
+92. “The Unconscious” (Freud):
+Ответ: Id
+93. Archetypes (Jung):
+Ответ: Symbols of Collective Unconscious
+94. Human behaviour determined by (Jung):
+Ответ: Collective unconsciousness
+95. Behaviour determined by 3 authorities (Freud):
+Ответ: Ego, Id, Super Ego
+96. Main problem of philosophy (Kierkegaard):
+Ответ: Human existence
+97. Why man is in the world (Kierkegaard):
+Ответ: Man was thrown into the world
+98. How human manifests (Nietzsche):
+Ответ: Will to power
+99. Superman (Nietzsche) is one who:
+Ответ: Does not believe in God
+100. Typical Kazakh mythological forms:
+Ответ: Tengrism and shamanism
+101. Philosophy of Marxism is called:
+Ответ: Dialectical materialism
+102. Socio-political theory of Marxism is called:
+Ответ: Historical materialism
+103. Philosophical method of Marxism is called:
+Ответ: Dialectics
+104. Idea of Communism represents:
+Ответ: Classless society
+105. Historical type of societies in Marxism is called:
+Ответ: Social economic formation
+106. What is Consciousness?
+Ответ: all of them
+107. Elements of Consciousness (A. G. Spirkin):
+Ответ: all of them
+108. Property describing immaterial essence of consciousness:
+Ответ: ideality
+109. Who is Homo Sapiens?
+Ответ: Man with thinking
+110. Consciousness according to Dualism:
+Ответ: immaterial substance
+111. Consciousness according to Darwinism:
+Ответ: highest property of brain
+112. Consciousness in Logical behaviorism:
+Ответ: acts
+113. Self-consciousness describes:
+Ответ: self-awareness
+114. Language is:
+Ответ: outer side of consciousness
+115. Ontology:
+Ответ: study of Being
+116. “Metaphysics” means:
+Ответ: what comes after physics
+117. What is Being?
+Ответ: category for existence
+118. Problem of Being:
+Ответ: what is the essence of the world
+119. Substance:
+Ответ: independent entity
+120. “Being is, but there is not non-being” —
+Ответ: Parmenides
+121. “Being does not lie in something else” —
+Ответ: Aristotle
+122. “Being is One” —
+Ответ: Parmenides
+123. “Being is God” —
+Ответ: Plotinus
+124. “Being is Two” —
+Ответ: Descartes
+125. “Being is plural” —
+Ответ: Leibniz
+126. “Being is Absolute Idea” —
+Ответ: Hegel
+127. “Being is Man” —
+Ответ: Heidegger
+128. Forms of Being:
+Ответ: All of them
+129. Matter:
+Ответ: material being
+130. Attributes of Matter:
+Ответ: All of them
+131. Forms of Motion:
+Ответ: all of them
+132. Development is:
+Ответ: motion from simple to complex
+133. Two concepts of Development:
+Ответ: methaphysical and dialectical
+134. Types of space:
+Ответ: Three-dimensional
+135. Types of time:
+Ответ: all of them
+136. Visible & invisible sides of things:
+Ответ: Essence and phenomenon
+137. Inner & outer sides of things:
+Ответ: Content and form
+138. Determinism category:
+Ответ: Necessity and contingency
+139. Cognition:
+Ответ: awareness of smth
+140. Knowledge:
+Ответ: information
+141. Common between Knowledge & Cognition:
+Ответ: knowledge is the result of cognitive process
+142. Epistemology:
+Ответ: Theory of knowledge
+143. Gnoseology:
+Ответ: Theory of knowledge
+144. Gnosticism:
+Ответ: cognitive optimism
+145. Agnosticism:
+Ответ: cognitive pessimism
+146. Skepticism:
+Ответ: cognitive doubts
+147. True ideas according Descartes:
+Ответ: innate ideas
+148. Truth proved by socio-historical practice —
+Ответ: Marx
+149. We can cognize only phenomena —
+Ответ: Kant
+150. Conceptual cognitive type:
+Ответ: scientific cognition
+151. Levels of cognition:
+Ответ: sensual and rational
+152. Judgment:
+Ответ: Statement reflecting the things and their properties
+153. Concept:
+Ответ: logical image that reproduces essential properties of objects
+154. Inference:
+Ответ: deduction from several interrelated judgments of a new judgment
+155. Intuition:
+Ответ: comprehend the truth by seeing it clear
+156. Truth in classical sense:
+Ответ: Truth is the correspondence of knowledge to reality
+157. Fallacy:
+Ответ: Is the fail of cognitive process
+158. Axiology studies:
+Ответ: values
+159. Absolute values:
+Ответ: truth, beauty, good
+160. Classification of values by carrier:
+Ответ: individual, supra individual
+161. Classification of values by existence:
+Ответ: material, spiritual
+162. What is Ethics?
+Ответ: theory of morality
+163. What is Morality?
+Ответ: social regulation form through good-bad
+164. Why Ethics is practical?
+Ответ: it is studied in order to become virtuous
+165. Difference between Morality and Mores:
+Ответ: norms and ideals
+166. Main Christian values:
+Ответ: faith, hope, love
+167. Stoic principle:
+Ответ: focus on what you control
+168. Hedonistic principle:
+Ответ: live for pleasure and well-being
+169. Pragmatic principle:
+Ответ: usefulness, practicability, benefit
+170. Epicureanism principle:
+Ответ: live for pleasure and well-being
+171. Eudemonism principle:
+Ответ: live a complete and fulfilling life
+172. Essence of Art (classical):
+Ответ: mimesis (representation of reality)
+173. Essence of Art (Renaissance):
+Ответ: Art is beauty, truth, good
+174. Essence of Art (17–18 centuries):
+Ответ: Art is expression of spiritual world of artist
+175. Essence of Art (contemporary):
+Ответ: Art is expression of spiritual world of artist
+176. Essence of Art (traditional):
+Ответ: Art is skill and mastery
+177. Aesthetic categories of Nietzsche:
+Ответ: Apollonian and Dionysian
+178. Aesthetic categories of Freud:
+Ответ: sublimation
+179. Aesthetic categories of Existentialism:
+Ответ: absurd
+180. Aesthetic categories of Plato:
+Ответ: mimesis
+181. Aesthetic categories of Aristotle:
+Ответ: catharsis
+182. “People are born free or slaves” —
+Ответ: Aristotle
+183. “Freedom is human illusion” —
+Ответ: Fromm
+184. “Freedom is recognized necessity” —
+Ответ: Spinoza
+185. “Freedom is democracy and equality” —
+Ответ: Rousseau
+186. “Freedom from and freedom for” —
+Ответ: Fromm
+187. Inevitability / unavoidable:
+Ответ: fatalism
+188. Individual rights, free enterprise:
+Ответ: liberalism
+189. Due to objective laws:
+Ответ: determinism
+190. Everything by someone’s will:
+Ответ: voluntarism
+191. Everything due to God’s will:
+Ответ: providentialism
+192. Criteria of society:
+Ответ: all of them
+193. What is society?
+Ответ: social relations
+194. Social Darwinism definition:
+Ответ: society is organism
+195. Marxism definition:
+Ответ: Society is social relations
+196. Naturalism definition:
+Ответ: Society is geographic adaptation
+197. Utopian definition:
+Ответ: Society is ideal place
+198. Atomism definition:
+Ответ: Society is summation of individuals
+199. Concise definition of Culture:
+Ответ: is material and spiritual environment created by man
+200. Main characteristics of a Mass Man (Ortega y Gasset):
+Ответ: consumerism
+`;
+
 export const parseQuestions = (): Question[] => {
+  // 1. Parse Key Map
+  const keyLines = ANSWER_KEY_RAW.split('\n');
+  const answerKeyMap = new Map<number, string>();
+  let currentKeyId = 0;
+
+  for (const line of keyLines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    
+    // Check for Question ID line in Key
+    const qMatch = trimmed.match(/^(\d+)\./);
+    if (qMatch) {
+      currentKeyId = parseInt(qMatch[1], 10);
+      continue;
+    }
+
+    // Check for Answer line
+    if (trimmed.startsWith('Ответ:')) {
+      const answerText = trimmed.replace('Ответ:', '').trim();
+      if (currentKeyId > 0) {
+        answerKeyMap.set(currentKeyId, answerText);
+      }
+    }
+  }
+
+  // 2. Parse Questions
   const lines = RAW_DATA.split('\n');
   const questions: Question[] = [];
   let currentQuestion: Partial<Question> | null = null;
   let currentOptions: string[] = [];
+
+  const pushQuestion = () => {
+    if (currentQuestion) {
+      currentQuestion.options = currentOptions;
+      
+      // Match correct answer
+      const correctAnswerText = answerKeyMap.get(currentQuestion.id || 0);
+      if (correctAnswerText && currentOptions.length > 0) {
+        // Simple fuzzy match: check if option includes answer or vice versa
+        // Normalizing to lowercase and removing special chars helps
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normAnswer = normalize(correctAnswerText);
+
+        const bestMatchIndex = currentOptions.findIndex(opt => {
+          const normOpt = normalize(opt);
+          return normOpt.includes(normAnswer) || normAnswer.includes(normOpt);
+        });
+
+        if (bestMatchIndex !== -1) {
+          currentQuestion.correctAnswerIndex = bestMatchIndex;
+        } else {
+             // Fallback: Sometimes "all of them" or "all answer are correct" matches poorly
+             if (normAnswer.includes('allanswer') || normAnswer.includes('allofthem')) {
+                const allIndex = currentOptions.findIndex(o => normalize(o).includes('all'));
+                if (allIndex !== -1) currentQuestion.correctAnswerIndex = allIndex;
+             }
+        }
+      }
+      
+      questions.push(currentQuestion as Question);
+    }
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
 
     // Detect new question pattern like "1. <question>..." or "14.<question>..."
-    // Added \s* to handle cases where space is missing after dot
     const questionMatch = line.match(/^(\d+)\.\s*<question>\s*(.*)/);
 
     if (questionMatch) {
-      // Save previous
-      if (currentQuestion) {
-        currentQuestion.options = currentOptions;
-        questions.push(currentQuestion as Question);
-      }
+      pushQuestion();
 
       // Start new
       currentQuestion = {
@@ -1436,12 +1893,7 @@ export const parseQuestions = (): Question[] => {
       currentOptions.push(line);
     }
   }
-
-  // Push last one
-  if (currentQuestion) {
-    currentQuestion.options = currentOptions;
-    questions.push(currentQuestion as Question);
-  }
+  pushQuestion(); // Push last
 
   return questions;
 };

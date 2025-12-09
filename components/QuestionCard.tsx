@@ -1,6 +1,6 @@
 import React from 'react';
 import { Question, AIAnalysis } from '../types';
-import { CheckCircle, XCircle, BrainCircuit, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, BrainCircuit, Loader2, CheckSquare } from 'lucide-react';
 
 interface QuestionCardProps {
   question: Question;
@@ -98,8 +98,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                  </>
                ) : (
                  <>
-                   <BrainCircuit className="w-4 h-4" />
-                   {hasApiKey ? 'Check Answer' : 'Simulate Check'}
+                   {hasApiKey ? <BrainCircuit className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+                   {hasApiKey ? 'Check with AI' : 'Check Answer'}
                  </>
                )}
              </button>
@@ -110,11 +110,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex items-start gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
               <div className="bg-brand-100 p-2 rounded-lg shrink-0">
-                <BrainCircuit className="w-5 h-5 text-brand-600" />
+                {hasApiKey ? <BrainCircuit className="w-5 h-5 text-brand-600" /> : <CheckSquare className="w-5 h-5 text-brand-600" />}
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                  AI Explanation
+                  {hasApiKey ? 'AI Explanation' : 'Result'}
                   <span className={`text-xs px-2 py-0.5 rounded-full ${aiAnalysis.correctOptionIndex === selectedOptionIndex ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {aiAnalysis.correctOptionIndex === selectedOptionIndex ? 'Correct' : 'Incorrect'}
                   </span>

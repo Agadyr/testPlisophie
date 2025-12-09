@@ -2,6 +2,7 @@ export interface Question {
   id: number;
   text: string;
   options: string[];
+  correctAnswerIndex?: number;
 }
 
 export interface QuizState {

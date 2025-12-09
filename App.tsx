@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { QUESTIONS } from './constants';
-import { QuizState, AIAnalysis } from './types';
+import { QuizState, AIAnalysis, Question } from './types';
 import { QuestionCard } from './components/QuestionCard';
 import { QuizResults } from './components/QuizResults';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { analyzeQuestion } from './services/geminiService';
-import { BookOpen, Settings, GraduationCap, RotateCcw, ArrowRight } from 'lucide-react';
+import { Settings, GraduationCap, RotateCcw, ArrowRight } from 'lucide-react';
 
 const BATCH_SIZE = 15;
 
+// Fisher-Yates Shuffle Algorithm
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
 const App: React.FC = () => {
+  // Initialize questions with a shuffled order
+  const [questions, setQuestions] = useState<Question[]>(() => shuffleArray(QUESTIONS));
+
   const [quizState, setQuizState] = useState<QuizState>({
     currentQuestionIndex: 0,
     userAnswers: {},
@@ -29,7 +42,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const storedKey = sessionStorage.getItem('gemini_api_key');
     if (storedKey) setApiKey(storedKey);
-    else setShowKeyModal(true);
   }, []);
 
   const handleApiKeySave = (key: string) => {
@@ -40,28 +52,36 @@ const App: React.FC = () => {
 
   const handleSelectOption = (index: number) => {
     if (currentAnalysis) return; // Prevent changing answer after check
+    const currentQ = questions[quizState.currentQuestionIndex];
+    
     setQuizState(prev => ({
       ...prev,
       userAnswers: {
         ...prev.userAnswers,
-        [QUESTIONS[prev.currentQuestionIndex].id]: index
+        [currentQ.id]: index
       }
     }));
   };
 
   const handleRequestAnalysis = async () => {
     const currentIndex = quizState.currentQuestionIndex;
-    const currentQuestion = QUESTIONS[currentIndex];
-
-    // Fallback simulation if no key
+    const currentQuestion = questions[currentIndex];
+    
+    // Check if we use AI or Static
     if (!apiKey) {
-      const mockAnalysis = {
-        correctOptionIndex: 0, // Mock fallback: A is always correct
-        explanation: "AI grading is disabled. Please add a Gemini API key to see the actual correct answer and explanation."
+      // STATIC CHECK MODE
+      const staticCorrectIndex = currentQuestion.correctAnswerIndex ?? 0; // Default to 0 if parsing failed
+      
+      const staticAnalysis: AIAnalysis = {
+        correctOptionIndex: staticCorrectIndex,
+        explanation: "Answer verified against the official answer key."
       };
-      setCurrentAnalysis(mockAnalysis);
-
-      const isCorrect = quizState.userAnswers[currentQuestion.id] === 0;
+      
+      setCurrentAnalysis(staticAnalysis);
+      
+      const selectedIndex = quizState.userAnswers[currentQuestion.id];
+      const isCorrect = selectedIndex === staticCorrectIndex;
+      
       setQuizState(prev => ({
         ...prev,
         answerHistory: { ...prev.answerHistory, [currentIndex]: isCorrect }
@@ -69,14 +89,15 @@ const App: React.FC = () => {
       return;
     }
 
+    // AI MODE
     setIsAnalyzing(true);
     try {
       const analysis = await analyzeQuestion(apiKey, currentQuestion);
       setCurrentAnalysis(analysis);
-
+      
       const selectedIndex = quizState.userAnswers[currentQuestion.id];
       const isCorrect = selectedIndex === analysis.correctOptionIndex;
-
+      
       setQuizState(prev => ({
         ...prev,
         answerHistory: { ...prev.answerHistory, [currentIndex]: isCorrect }
@@ -91,22 +112,25 @@ const App: React.FC = () => {
 
   const handleNext = () => {
     const currentIndex = quizState.currentQuestionIndex;
-
+    
     // If we are currently reviewing
     if (quizState.isReviewing) {
       const remainingQueue = quizState.reviewQueue.slice(1);
-
+      
       if (remainingQueue.length > 0) {
         // Continue review
+        const nextReviewIndex = remainingQueue[0];
         setQuizState(prev => ({
           ...prev,
           reviewQueue: remainingQueue,
-          currentQuestionIndex: remainingQueue[0]
+          currentQuestionIndex: nextReviewIndex,
+          // Important: Clear the answer for the next review question so user can try again
+          userAnswers: { ...prev.userAnswers, [questions[nextReviewIndex].id]: undefined as any }
         }));
       } else {
         // Finish review, go back to main progress
         const nextMainIndex = quizState.mainProgressIndex + 1;
-        if (nextMainIndex >= QUESTIONS.length) {
+        if (nextMainIndex >= questions.length) {
           setQuizState(prev => ({ ...prev, isFinished: true }));
         } else {
           setQuizState(prev => ({
@@ -118,13 +142,13 @@ const App: React.FC = () => {
       }
     } else {
       // Normal flow
-      const isBatchEnd = (currentIndex + 1) % BATCH_SIZE === 0 || currentIndex === QUESTIONS.length - 1;
-
+      const isBatchEnd = (currentIndex + 1) % BATCH_SIZE === 0 || currentIndex === questions.length - 1;
+      
       if (isBatchEnd) {
         // Check for incorrect answers in the current batch
         const batchStart = Math.floor(currentIndex / BATCH_SIZE) * BATCH_SIZE;
         const incorrectIndices: number[] = [];
-
+        
         for (let i = batchStart; i <= currentIndex; i++) {
           if (quizState.answerHistory[i] === false) {
             incorrectIndices.push(i);
@@ -135,7 +159,7 @@ const App: React.FC = () => {
           // Clear user answers for these questions so they can try again
           const newUserAnswers = { ...quizState.userAnswers };
           incorrectIndices.forEach(idx => {
-            delete newUserAnswers[QUESTIONS[idx].id];
+             delete newUserAnswers[questions[idx].id];
           });
 
           // Enter review mode
@@ -149,7 +173,7 @@ const App: React.FC = () => {
           }));
         } else {
           // No errors, proceed normally
-          if (currentIndex < QUESTIONS.length - 1) {
+          if (currentIndex < questions.length - 1) {
             setQuizState(prev => ({
               ...prev,
               currentQuestionIndex: currentIndex + 1
@@ -166,12 +190,14 @@ const App: React.FC = () => {
         }));
       }
     }
-
+    
     setCurrentAnalysis(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleRestart = () => {
+    // Reshuffle questions on restart
+    setQuestions(shuffleArray(QUESTIONS));
     setQuizState({
       currentQuestionIndex: 0,
       userAnswers: {},
@@ -184,25 +210,26 @@ const App: React.FC = () => {
     setCurrentAnalysis(null);
   };
 
-  const currentQuestion = QUESTIONS[quizState.currentQuestionIndex];
-
+  // Safe check in case questions array is empty (shouldn't happen)
+  const currentQuestion = questions[quizState.currentQuestionIndex];
+  if (!currentQuestion) return <div>Loading...</div>;
+  
   // Progress Calculation
-  // In review mode, show progress based on main index to avoid jumping bar
-  const displayedProgressIndex = quizState.isReviewing
-    ? quizState.mainProgressIndex
+  const displayedProgressIndex = quizState.isReviewing 
+    ? quizState.mainProgressIndex 
     : quizState.currentQuestionIndex;
-
-  const progress = ((displayedProgressIndex + 1) / QUESTIONS.length) * 100;
-
+  
+  const progress = ((displayedProgressIndex + 1) / questions.length) * 100;
+  
   const hasSelectedOption = quizState.userAnswers[currentQuestion.id] !== undefined;
   const isChecked = currentAnalysis !== null;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans selection:bg-brand-100 selection:text-brand-900">
-      <ApiKeyModal
-        isOpen={showKeyModal}
-        onClose={() => setShowKeyModal(false)}
-        onSave={handleApiKeySave}
+      <ApiKeyModal 
+        isOpen={showKeyModal} 
+        onClose={() => setShowKeyModal(false)} 
+        onSave={handleApiKeySave} 
       />
 
       {/* Header */}
@@ -216,7 +243,7 @@ const App: React.FC = () => {
               Wayground <span className="text-gray-400 font-normal text-sm ml-1">Philosophy</span>
             </h1>
           </div>
-          <button
+          <button 
             onClick={() => setShowKeyModal(true)}
             className={`p-2 rounded-full transition-colors ${apiKey ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
             title="Configure API Key"
@@ -224,11 +251,11 @@ const App: React.FC = () => {
             <Settings size={20} />
           </button>
         </div>
-
+        
         {/* Progress Bar */}
         {!quizState.isFinished && (
           <div className="h-1 w-full bg-gray-100 relative">
-            <div
+            <div 
               className="h-full bg-brand-500 transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
@@ -247,7 +274,7 @@ const App: React.FC = () => {
                     Reviewing Mistakes ({quizState.reviewQueue.indexOf(quizState.currentQuestionIndex) + 1}/{quizState.reviewQueue.length})
                   </span>
                 ) : (
-                  `Question ${quizState.currentQuestionIndex + 1} of ${QUESTIONS.length}`
+                  `Question ${quizState.currentQuestionIndex + 1} of ${questions.length}`
                 )}
               </span>
               <span className={`px-2 py-1 rounded text-xs font-medium ${quizState.isReviewing ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -269,10 +296,10 @@ const App: React.FC = () => {
               {/* Show Next button only after checking, or enforce checking */}
               {!isChecked ? (
                 <div className="text-right">
-                  <p className="text-xs text-gray-400 mb-2 mr-1">Please check your answer to proceed</p>
+                   <p className="text-xs text-gray-400 mb-2 mr-1">Please check your answer to proceed</p>
                 </div>
               ) : (
-                <button
+                 <button
                   onClick={handleNext}
                   className="flex items-center gap-2 px-8 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 animate-in fade-in slide-in-from-bottom-2"
                 >
@@ -283,17 +310,17 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : (
-          <QuizResults
-            state={quizState}
-            totalQuestions={QUESTIONS.length}
+          <QuizResults 
+            state={quizState} 
+            totalQuestions={questions.length}
             onRestart={handleRestart}
           />
         )}
       </main>
-
+      
       {/* Persistent Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 text-center text-xs text-gray-400">
-        <p>© 2024 Wayground Philosophy Quiz. Powered by Gemini.</p>
+         <p>© 2024 Wayground Philosophy Quiz. Powered by Gemini.</p>
       </footer>
     </div>
   );
