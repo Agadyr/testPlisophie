@@ -52,7 +52,7 @@ const App: React.FC = () => {
   const handleRequestAnalysis = async () => {
     const currentIndex = quizState.currentQuestionIndex;
     const currentQuestion = QUESTIONS[currentIndex];
-    
+
     // Fallback simulation if no key
     if (!apiKey) {
       const mockAnalysis = {
@@ -60,7 +60,7 @@ const App: React.FC = () => {
         explanation: "AI grading is disabled. Please add a Gemini API key to see the actual correct answer and explanation."
       };
       setCurrentAnalysis(mockAnalysis);
-      
+
       const isCorrect = quizState.userAnswers[currentQuestion.id] === 0;
       setQuizState(prev => ({
         ...prev,
@@ -73,10 +73,10 @@ const App: React.FC = () => {
     try {
       const analysis = await analyzeQuestion(apiKey, currentQuestion);
       setCurrentAnalysis(analysis);
-      
+
       const selectedIndex = quizState.userAnswers[currentQuestion.id];
       const isCorrect = selectedIndex === analysis.correctOptionIndex;
-      
+
       setQuizState(prev => ({
         ...prev,
         answerHistory: { ...prev.answerHistory, [currentIndex]: isCorrect }
@@ -91,11 +91,11 @@ const App: React.FC = () => {
 
   const handleNext = () => {
     const currentIndex = quizState.currentQuestionIndex;
-    
+
     // If we are currently reviewing
     if (quizState.isReviewing) {
       const remainingQueue = quizState.reviewQueue.slice(1);
-      
+
       if (remainingQueue.length > 0) {
         // Continue review
         setQuizState(prev => ({
@@ -119,12 +119,12 @@ const App: React.FC = () => {
     } else {
       // Normal flow
       const isBatchEnd = (currentIndex + 1) % BATCH_SIZE === 0 || currentIndex === QUESTIONS.length - 1;
-      
+
       if (isBatchEnd) {
         // Check for incorrect answers in the current batch
         const batchStart = Math.floor(currentIndex / BATCH_SIZE) * BATCH_SIZE;
         const incorrectIndices: number[] = [];
-        
+
         for (let i = batchStart; i <= currentIndex; i++) {
           if (quizState.answerHistory[i] === false) {
             incorrectIndices.push(i);
@@ -135,7 +135,7 @@ const App: React.FC = () => {
           // Clear user answers for these questions so they can try again
           const newUserAnswers = { ...quizState.userAnswers };
           incorrectIndices.forEach(idx => {
-             delete newUserAnswers[QUESTIONS[idx].id];
+            delete newUserAnswers[QUESTIONS[idx].id];
           });
 
           // Enter review mode
@@ -166,7 +166,7 @@ const App: React.FC = () => {
         }));
       }
     }
-    
+
     setCurrentAnalysis(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -185,24 +185,24 @@ const App: React.FC = () => {
   };
 
   const currentQuestion = QUESTIONS[quizState.currentQuestionIndex];
-  
+
   // Progress Calculation
   // In review mode, show progress based on main index to avoid jumping bar
-  const displayedProgressIndex = quizState.isReviewing 
-    ? quizState.mainProgressIndex 
+  const displayedProgressIndex = quizState.isReviewing
+    ? quizState.mainProgressIndex
     : quizState.currentQuestionIndex;
-  
+
   const progress = ((displayedProgressIndex + 1) / QUESTIONS.length) * 100;
-  
+
   const hasSelectedOption = quizState.userAnswers[currentQuestion.id] !== undefined;
   const isChecked = currentAnalysis !== null;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans selection:bg-brand-100 selection:text-brand-900">
-      <ApiKeyModal 
-        isOpen={showKeyModal} 
-        onClose={() => setShowKeyModal(false)} 
-        onSave={handleApiKeySave} 
+      <ApiKeyModal
+        isOpen={showKeyModal}
+        onClose={() => setShowKeyModal(false)}
+        onSave={handleApiKeySave}
       />
 
       {/* Header */}
@@ -216,7 +216,7 @@ const App: React.FC = () => {
               Wayground <span className="text-gray-400 font-normal text-sm ml-1">Philosophy</span>
             </h1>
           </div>
-          <button 
+          <button
             onClick={() => setShowKeyModal(true)}
             className={`p-2 rounded-full transition-colors ${apiKey ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
             title="Configure API Key"
@@ -224,11 +224,11 @@ const App: React.FC = () => {
             <Settings size={20} />
           </button>
         </div>
-        
+
         {/* Progress Bar */}
         {!quizState.isFinished && (
           <div className="h-1 w-full bg-gray-100 relative">
-            <div 
+            <div
               className="h-full bg-brand-500 transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
@@ -269,10 +269,10 @@ const App: React.FC = () => {
               {/* Show Next button only after checking, or enforce checking */}
               {!isChecked ? (
                 <div className="text-right">
-                   <p className="text-xs text-gray-400 mb-2 mr-1">Please check your answer to proceed</p>
+                  <p className="text-xs text-gray-400 mb-2 mr-1">Please check your answer to proceed</p>
                 </div>
               ) : (
-                 <button
+                <button
                   onClick={handleNext}
                   className="flex items-center gap-2 px-8 py-3 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 animate-in fade-in slide-in-from-bottom-2"
                 >
@@ -283,17 +283,17 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : (
-          <QuizResults 
-            state={quizState} 
+          <QuizResults
+            state={quizState}
             totalQuestions={QUESTIONS.length}
             onRestart={handleRestart}
           />
         )}
       </main>
-      
+
       {/* Persistent Footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 text-center text-xs text-gray-400">
-         <p>© 2024 Wayground Philosophy Quiz. Powered by Gemini.</p>
+        <p>© 2024 Wayground Philosophy Quiz. Powered by Gemini.</p>
       </footer>
     </div>
   );
