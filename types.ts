@@ -1,3 +1,4 @@
+
 export interface Question {
   id: number;
   text: string;
@@ -26,3 +27,5 @@ export enum GameMode {
   PRACTICE = 'PRACTICE', // Immediate feedback
   EXAM = 'EXAM', // Feedback at the end
 }
+
+export type Subject = 'philosophy' | 'psychology';

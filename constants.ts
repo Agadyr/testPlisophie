@@ -1,8 +1,68 @@
+
 import { Question } from './types';
 
-// Storing the raw text to parse it programmatically. 
-// This ensures all 200 questions are captured without manual JSON formatting errors.
-const RAW_DATA = `
+// ==========================================
+// PARSING LOGIC
+// ==========================================
+
+const parseQuestions = (rawData: string, answerKey?: Record<number, number>): Question[] => {
+  // 1. Split by "number dot" pattern (e.g., "1.", "105.")
+  // We use a regex lookahead to split but keep the delimiter or just split and reconstruct
+  // Regex: Split by newline followed by number and dot
+  const chunks = rawData.split(/\n(?=\d+\.)/);
+
+  const questions: Question[] = [];
+
+  chunks.forEach((chunk) => {
+    // Clean up whitespace
+    const lines = chunk.trim().split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length < 2) return;
+
+    // First line is the question text
+    // Remove the leading number and dot (e.g. "1. <question>Text" or "1. Text")
+    let questionText = lines[0].replace(/^\d+\.\s*/, '').trim();
+    
+    // Remove <question> tag if present (legacy format)
+    questionText = questionText.replace('<question>', '').trim();
+
+    // The rest are options
+    // Filter out lines that might be "Ответ:" (Answer keys in raw text) or empty
+    let options = lines.slice(1).filter(line => !line.toLowerCase().startsWith('ответ:'));
+
+    // If options contain labels like "a)", "b)", remove them for cleaner UI
+    options = options.map(opt => opt.replace(/^[a-z]\)\s*/i, '').replace(/^\d+\.\s*/, ''));
+
+    if (options.length > 0) {
+      // Extract ID from the first line for mapping
+      const idMatch = lines[0].match(/^(\d+)\./);
+      const id = idMatch ? parseInt(idMatch[1]) : questions.length + 1;
+      
+      const q: Question = {
+        id: id,
+        text: questionText,
+        options: options,
+      };
+
+      // Assign correct answer if key exists
+      if (answerKey && answerKey[id] !== undefined) {
+        // Ensure index is within bounds
+        if (answerKey[id] < options.length) {
+          q.correctAnswerIndex = answerKey[id];
+        }
+      }
+
+      questions.push(q);
+    }
+  });
+
+  return questions;
+};
+
+// ==========================================
+// PHILOSOPHY DATA
+// ==========================================
+
+const PHILOSOPHY_RAW_DATA = `
 1.	<question>The specificity of the mythological worldview:
 The unity of man and the world
 Logical representation of the world
@@ -1089,11 +1149,11 @@ comprehend the truth by seeing it clear
 integral image of an object in the unity reflected through sensations.
 
 156.	<question> What is Truth in Classical sense?
-Truth is the correspondence of knowledge to reality; 
-this is what is confirmed by experience;
-is a kind of agreement – a convention;
-usefulness of the knowledge gained; 
-effectiveness of its use in practice.
+ Truth is the correspondence of knowledge to reality; 
+         this is what is confirmed by experience;
+         is a kind of agreement – a convention;
+         usefulness of the knowledge gained; 
+         effectiveness of its use in practice.
 
 157.	<question> What is correct about Fallacy?
 Deliberate distortion of truth
@@ -1177,28 +1237,28 @@ live for pleasure and well-being
 focus on what you control
 live a complete and fulfilling life
 usefulness, practicability, benefit
-prudence, courage, justice
+         prudence, courage, justice
 
 169.	<question> Which one is Pragmatic principle?
 live for pleasure and well-being
 focus on what you control
 live a complete and fulfilling life
 usefulness, practicability, benefit
-prudence, courage, justice
+         prudence, courage, justice
 
 170.	<question> What is Epicureanism principle?
 live for pleasure and well-being
 focus on what you control
 live a complete and fulfilling life
 usefulness, practicability, benefit
-prudence, courage, justice
+         prudence, courage, justice
 
 171.	<question> What is Eudemonism principle?
 live for pleasure and well-being
 focus on what you control
 live a complete and fulfilling life
 usefulness, practicability, benefit
-prudence, courage, justice
+         prudence, courage, justice
 
 172.	<question> Essence of Art in classical sense:
 Art is representation of reality
@@ -1247,28 +1307,28 @@ sublimation
 Apollonian and Dionysian
 absurd
 mimesis 
-catharsis
+         catharsis
 
 179.	<question> Aesthetic categories of Existentialism:
 sublimation
 Apollonian and Dionysian
 absurd
 mimesis 
-catharsis
+         catharsis
 
 180.	<question> Aesthetic categories of Plato
 sublimation
 Apollonian and Dionysian
 absurd
 mimesis 
-catharsis
+         catharsis
 
 181.	<question> Aesthetic categories of Aristotle
 sublimation
 Apollonian and Dionysian
 absurd
 mimesis 
-catharsis
+         catharsis
 
 182.	<question> Whose statement is this? – People are born free or slaves.
 Erasmus 
@@ -1344,7 +1404,7 @@ providentialism
 territory
 all of them
 self-regulation
-self-control
+         self-control
 integrity
 
 193.	<question> What is society?
@@ -1397,6 +1457,7 @@ fine manners
 customs and traditions
 
 200.	<question> What are the main characteristics of a Mass Man according to Ortega y Gasset?
+
 responsibility
 consumerism
 education
@@ -1404,498 +1465,846 @@ high standards
 hard work
 `;
 
-// Answer key data derived from the PDF
-const ANSWER_KEY_RAW = `
-1. The specificity of the mythological worldview:
-Ответ: The unity of man and the world
-2. Philosophical worldview has its own specifics:
-Ответ: all answer are correct
-3. The object of philosophy:
-Ответ: the world and the man
-4. The subject of philosophy is:
-Ответ: the most general laws and patterns of development and functioning of human society, thinking and the universe
-5. The main divisions of philosophy:
-Ответ: Gnoseology, ontology, ethics, aesthetics
-6. Which function doesn’t belong to philosophy:
-Ответ: Scientific
-7. The basic question of philosophy:
-Ответ: What is primary: consciousness or matter?
-8. The other side of the basic question of philosophy:
-Ответ: Relation of thinking to being
-9. Solution of the basic question of philosophy:
-Ответ: Materialism and idealism
-10. Solution of the other side of the basic question of philosophy:
-Ответ: Gnosticism and agnosticism
-11. Metaphysics in philosophy states:
-Ответ: the world is static, unchanging
-12. Dialectics in philosophy states:
-Ответ: the world is flux
-13. Consciousness is state of:
-Ответ: thinking
-14. The central problem of Consciousness:
-Ответ: Mind and body
-15. What does NOT belong to Sensory knowledge?
-Ответ: reasoning
-16. What does NOT belong to Rational knowledge?
-Ответ: intuition
-17. True being according to Plato:
-Ответ: ideas
-18. Being according to Aristotle:
-Ответ: substance
-19. Being according to Heidegger:
-Ответ: existence
-20. Human according to Social Darwinism is:
-Ответ: organism
-21. Human according to Marxism:
-Ответ: social being
-22. Human according to Descartes:
-Ответ: rational being
-23. Moral is an object of study of:
-Ответ: ethics
-24. «Things-in itself» by Kant is:
-Ответ: Things we cannot cognize
-25. «noumena» by Kant is:
-Ответ: Unknowable world
-26. «phenomena» by Kant is
-Ответ: Sensual images of objects
-27. Tengrism can be defined as:
-Ответ: Monotheism
-28. Shamanism is a form of:
-Ответ: Religion
-29. Combination of different Beliefs… is called:
-Ответ: Syncretism
-30. Levy-Bruhl meant:
-Ответ: Magic
-31. Essential cult for Kazakh worldview:
-Ответ: Cult of ancestors
-32. Philosophical system of Marxism:
-Ответ: Dialectical materialism
-33. Central category of Marx’s Historical materialism:
-Ответ: Social-economic formation
-34. Freedom according to Spinoza:
-Ответ: Recognized necessity
-35. Central problem in Kierkegaard’s philosophy:
-Ответ: Human existence
-36. Ethical ideal of Nietzsche:
-Ответ: Superman
-37. Main philosophical categories of Camus:
-Ответ: Absurdity and rebellion
-38. Why Existentialism is humanism (Sartre):
-Ответ: Man himself determines his existence
-39. Layer of psyche discovered by Freud:
-Ответ: Unconscious
-40. Believed the main task was self-knowledge:
-Ответ: Socrates
-41. Translation of “axiology”:
-Ответ: Study of values
-42. Dualism (thinking & extended substances) — philosophy of:
-Ответ: R. Descartes
-43. Theory of scientific knowledge:
-Ответ: Epistemology
-44. Object of philosophy:
-Ответ: World in whole and the place of man in this world
-45. Ethic is:
-Ответ: A study of morality and moral behaviour
-46. Aesthetics is:
-Ответ: A study of beauty and art
-47. First historical type of outlook:
-Ответ: Mythology
-48. Faith in the supernatural forces is:
-Ответ: Religion
-49. Socratic ethical rationalism:
-Ответ: Virtue is knowledge
-50. Outstanding French existentialist:
-Ответ: Albert Camus
-51. Subjective/Objective/Absolute spirit — whose?
-Ответ: Hegel
-52. Ancient Eastern philosophy developed in:
-Ответ: India and China
-53. “Act only on that maxim…” —
-Ответ: the Kant’s Categorical imperative
-54. “Cogito, ergo sum”:
-Ответ: I think, therefore I exist
-55. Universal law in Indian philosophy:
-Ответ: Karma
-56. First Baconian idol:
-Ответ: Tribe
-57. Second Baconian idol:
-Ответ: Cave
-58. Third Baconian idol:
-Ответ: Marketplace
-59. Fourth Baconian idol:
-Ответ: Theatre
-60. Knowledge based on experience:
-Ответ: Empiricism
-61. Kant’s categorical imperative is about:
-Ответ: Moral problems
-62. Translation of “philosophy”:
-Ответ: Love of wisdom
-63. Translation of “Sophist”:
-Ответ: Wise man
-64. “The first teacher”:
-Ответ: Aristotle
-65. Arche of Heraclitus:
-Ответ: Logos (fire)
-66. Arche of Pythagoras:
-Ответ: Numbers
-67. Teaching of Aristotle:
-Ответ: Peripatetism
-68. Renaissance view of human:
-Ответ: Human is a creator, artist, enriched microcosm
-69. “I know that I know nothing”:
-Ответ: Socrates
-70. 5 proofs of God’s existence — author:
-Ответ: Thomas Aquinas
-71. Myth of the Cave — author:
-Ответ: Plato
-72. Theocentrism — center is:
-Ответ: God
-73. Defining characteristic of religious outlook:
-Ответ: Belief in the supernatural forces
-74. Main characteristic of Renaissance:
-Ответ: Anthropocentrism
-75. Creationism:
-Ответ: God
-76. Searching human individuality — philosophy of:
-Ответ: Existentialism
-77. Destinies determined by God:
-Ответ: Providentialism
-78. Psychoanalytic theory — author:
-Ответ: Sigmund Freud
-79. “Thus Spoke Zarathustra” — author:
-Ответ: Nietzsche
-80. Branch studying historical knowledge:
-Ответ: Philosophy of history
-81. Social economic formation — developed by:
-Ответ: Marx
-82. “Either/Or”, “Fear and Trembling” — author:
-Ответ: Kierkegaard
-83. Conscious vs unconscious — indicated by:
-Ответ: Freud
-84. Aesthetic values:
-Ответ: Beauty, art, harmony, style
-85. “God is dead” — said:
-Ответ: Nietzsche
-86. Founders of existentialism:
-Ответ: Camus, Sartre, Kierkegaard
-87. “Man of absurd” (Camus):
-Ответ: Meaningless of existence
-88. “Man of rebellion” (Camus):
-Ответ: I rebel, therefore I exist
-89. “Borderline situations” — awareness of:
-Ответ: His coming death
-90. According to Sartre man is:
-Ответ: A project of himself
-91. “Neurotic” (Freud):
-Ответ: A healthy person with neurotic symptoms
-92. “The Unconscious” (Freud):
-Ответ: Id
-93. Archetypes (Jung):
-Ответ: Symbols of Collective Unconscious
-94. Human behaviour determined by (Jung):
-Ответ: Collective unconsciousness
-95. Behaviour determined by 3 authorities (Freud):
-Ответ: Ego, Id, Super Ego
-96. Main problem of philosophy (Kierkegaard):
-Ответ: Human existence
-97. Why man is in the world (Kierkegaard):
-Ответ: Man was thrown into the world
-98. How human manifests (Nietzsche):
-Ответ: Will to power
-99. Superman (Nietzsche) is one who:
-Ответ: Does not believe in God
-100. Typical Kazakh mythological forms:
-Ответ: Tengrism and shamanism
-101. Philosophy of Marxism is called:
-Ответ: Dialectical materialism
-102. Socio-political theory of Marxism is called:
-Ответ: Historical materialism
-103. Philosophical method of Marxism is called:
-Ответ: Dialectics
-104. Idea of Communism represents:
-Ответ: Classless society
-105. Historical type of societies in Marxism is called:
-Ответ: Social economic formation
-106. What is Consciousness?
-Ответ: all of them
-107. Elements of Consciousness (A. G. Spirkin):
-Ответ: all of them
-108. Property describing immaterial essence of consciousness:
-Ответ: ideality
-109. Who is Homo Sapiens?
-Ответ: Man with thinking
-110. Consciousness according to Dualism:
-Ответ: immaterial substance
-111. Consciousness according to Darwinism:
-Ответ: highest property of brain
-112. Consciousness in Logical behaviorism:
-Ответ: acts
-113. Self-consciousness describes:
-Ответ: self-awareness
-114. Language is:
-Ответ: outer side of consciousness
-115. Ontology:
-Ответ: study of Being
-116. “Metaphysics” means:
-Ответ: what comes after physics
-117. What is Being?
-Ответ: category for existence
-118. Problem of Being:
-Ответ: what is the essence of the world
-119. Substance:
-Ответ: independent entity
-120. “Being is, but there is not non-being” —
-Ответ: Parmenides
-121. “Being does not lie in something else” —
-Ответ: Aristotle
-122. “Being is One” —
-Ответ: Parmenides
-123. “Being is God” —
-Ответ: Plotinus
-124. “Being is Two” —
-Ответ: Descartes
-125. “Being is plural” —
-Ответ: Leibniz
-126. “Being is Absolute Idea” —
-Ответ: Hegel
-127. “Being is Man” —
-Ответ: Heidegger
-128. Forms of Being:
-Ответ: All of them
-129. Matter:
-Ответ: material being
-130. Attributes of Matter:
-Ответ: All of them
-131. Forms of Motion:
-Ответ: all of them
-132. Development is:
-Ответ: motion from simple to complex
-133. Two concepts of Development:
-Ответ: methaphysical and dialectical
-134. Types of space:
-Ответ: Three-dimensional
-135. Types of time:
-Ответ: all of them
-136. Visible & invisible sides of things:
-Ответ: Essence and phenomenon
-137. Inner & outer sides of things:
-Ответ: Content and form
-138. Determinism category:
-Ответ: Necessity and contingency
-139. Cognition:
-Ответ: awareness of smth
-140. Knowledge:
-Ответ: information
-141. Common between Knowledge & Cognition:
-Ответ: knowledge is the result of cognitive process
-142. Epistemology:
-Ответ: Theory of knowledge
-143. Gnoseology:
-Ответ: Theory of knowledge
-144. Gnosticism:
-Ответ: cognitive optimism
-145. Agnosticism:
-Ответ: cognitive pessimism
-146. Skepticism:
-Ответ: cognitive doubts
-147. True ideas according Descartes:
-Ответ: innate ideas
-148. Truth proved by socio-historical practice —
-Ответ: Marx
-149. We can cognize only phenomena —
-Ответ: Kant
-150. Conceptual cognitive type:
-Ответ: scientific cognition
-151. Levels of cognition:
-Ответ: sensual and rational
-152. Judgment:
-Ответ: Statement reflecting the things and their properties
-153. Concept:
-Ответ: logical image that reproduces essential properties of objects
-154. Inference:
-Ответ: deduction from several interrelated judgments of a new judgment
-155. Intuition:
-Ответ: comprehend the truth by seeing it clear
-156. Truth in classical sense:
-Ответ: Truth is the correspondence of knowledge to reality
-157. Fallacy:
-Ответ: Is the fail of cognitive process
-158. Axiology studies:
-Ответ: values
-159. Absolute values:
-Ответ: truth, beauty, good
-160. Classification of values by carrier:
-Ответ: individual, supra individual
-161. Classification of values by existence:
-Ответ: material, spiritual
-162. What is Ethics?
-Ответ: theory of morality
-163. What is Morality?
-Ответ: social regulation form through good-bad
-164. Why Ethics is practical?
-Ответ: it is studied in order to become virtuous
-165. Difference between Morality and Mores:
-Ответ: norms and ideals
-166. Main Christian values:
-Ответ: faith, hope, love
-167. Stoic principle:
-Ответ: focus on what you control
-168. Hedonistic principle:
-Ответ: live for pleasure and well-being
-169. Pragmatic principle:
-Ответ: usefulness, practicability, benefit
-170. Epicureanism principle:
-Ответ: live for pleasure and well-being
-171. Eudemonism principle:
-Ответ: live a complete and fulfilling life
-172. Essence of Art (classical):
-Ответ: mimesis (representation of reality)
-173. Essence of Art (Renaissance):
-Ответ: Art is beauty, truth, good
-174. Essence of Art (17–18 centuries):
-Ответ: Art is expression of spiritual world of artist
-175. Essence of Art (contemporary):
-Ответ: Art is expression of spiritual world of artist
-176. Essence of Art (traditional):
-Ответ: Art is skill and mastery
-177. Aesthetic categories of Nietzsche:
-Ответ: Apollonian and Dionysian
-178. Aesthetic categories of Freud:
-Ответ: sublimation
-179. Aesthetic categories of Existentialism:
-Ответ: absurd
-180. Aesthetic categories of Plato:
-Ответ: mimesis
-181. Aesthetic categories of Aristotle:
-Ответ: catharsis
-182. “People are born free or slaves” —
-Ответ: Aristotle
-183. “Freedom is human illusion” —
-Ответ: Fromm
-184. “Freedom is recognized necessity” —
-Ответ: Spinoza
-185. “Freedom is democracy and equality” —
-Ответ: Rousseau
-186. “Freedom from and freedom for” —
-Ответ: Fromm
-187. Inevitability / unavoidable:
-Ответ: fatalism
-188. Individual rights, free enterprise:
-Ответ: liberalism
-189. Due to objective laws:
-Ответ: determinism
-190. Everything by someone’s will:
-Ответ: voluntarism
-191. Everything due to God’s will:
-Ответ: providentialism
-192. Criteria of society:
-Ответ: all of them
-193. What is society?
-Ответ: social relations
-194. Social Darwinism definition:
-Ответ: society is organism
-195. Marxism definition:
-Ответ: Society is social relations
-196. Naturalism definition:
-Ответ: Society is geographic adaptation
-197. Utopian definition:
-Ответ: Society is ideal place
-198. Atomism definition:
-Ответ: Society is summation of individuals
-199. Concise definition of Culture:
-Ответ: is material and spiritual environment created by man
-200. Main characteristics of a Mass Man (Ortega y Gasset):
-Ответ: consumerism
-`;
-
-export const parseQuestions = (): Question[] => {
-  // 1. Parse Key Map
-  const keyLines = ANSWER_KEY_RAW.split('\n');
-  const answerKeyMap = new Map<number, string>();
-  let currentKeyId = 0;
-
-  for (const line of keyLines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    
-    // Check for Question ID line in Key
-    const qMatch = trimmed.match(/^(\d+)\./);
-    if (qMatch) {
-      currentKeyId = parseInt(qMatch[1], 10);
-      continue;
-    }
-
-    // Check for Answer line
-    if (trimmed.startsWith('Ответ:')) {
-      const answerText = trimmed.replace('Ответ:', '').trim();
-      if (currentKeyId > 0) {
-        answerKeyMap.set(currentKeyId, answerText);
-      }
-    }
-  }
-
-  // 2. Parse Questions
-  const lines = RAW_DATA.split('\n');
-  const questions: Question[] = [];
-  let currentQuestion: Partial<Question> | null = null;
-  let currentOptions: string[] = [];
-
-  const pushQuestion = () => {
-    if (currentQuestion) {
-      currentQuestion.options = currentOptions;
-      
-      // Match correct answer
-      const correctAnswerText = answerKeyMap.get(currentQuestion.id || 0);
-      if (correctAnswerText && currentOptions.length > 0) {
-        // Simple fuzzy match: check if option includes answer or vice versa
-        // Normalizing to lowercase and removing special chars helps
-        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normAnswer = normalize(correctAnswerText);
-
-        const bestMatchIndex = currentOptions.findIndex(opt => {
-          const normOpt = normalize(opt);
-          return normOpt.includes(normAnswer) || normAnswer.includes(normOpt);
-        });
-
-        if (bestMatchIndex !== -1) {
-          currentQuestion.correctAnswerIndex = bestMatchIndex;
-        } else {
-             // Fallback: Sometimes "all of them" or "all answer are correct" matches poorly
-             if (normAnswer.includes('allanswer') || normAnswer.includes('allofthem')) {
-                const allIndex = currentOptions.findIndex(o => normalize(o).includes('all'));
-                if (allIndex !== -1) currentQuestion.correctAnswerIndex = allIndex;
-             }
-        }
-      }
-      
-      questions.push(currentQuestion as Question);
-    }
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    // Detect new question pattern like "1. <question>..." or "14.<question>..."
-    const questionMatch = line.match(/^(\d+)\.\s*<question>\s*(.*)/);
-
-    if (questionMatch) {
-      pushQuestion();
-
-      // Start new
-      currentQuestion = {
-        id: parseInt(questionMatch[1], 10),
-        text: questionMatch[2].trim(),
-      };
-      currentOptions = [];
-    } else if (currentQuestion) {
-      // It's an option
-      currentOptions.push(line);
-    }
-  }
-  pushQuestion(); // Push last
-
-  return questions;
+const PHILOSOPHY_ANSWER_KEY: Record<number, number> = {
+  1: 0, 2: 4, 3: 3, 4: 0, 5: 3, 6: 1, 7: 0, 8: 0, 9: 2, 10: 0,
+  11: 2, 12: 1, 13: 3, 14: 2, 15: 3, 16: 3, 17: 1, 18: 0, 19: 2, 20: 1,
+  21: 4, 22: 2, 23: 3, 24: 1, 25: 0, 26: 2, 27: 0, 28: 4, 29: 0, 30: 3,
+  31: 0, 32: 3, 33: 3, 34: 3, 35: 3, 36: 4, 37: 1, 38: 1, 39: 1, 40: 1,
+  41: 0, 42: 2, 43: 1, 44: 1, 45: 2, 46: 2, 47: 3, 48: 0, 49: 2, 50: 2,
+  51: 1, 52: 0, 53: 1, 54: 3, 55: 4, 56: 2, 57: 0, 58: 1, 59: 3, 60: 0,
+  61: 2, 62: 1, 63: 0, 64: 1, 65: 0, 66: 0, 67: 1, 68: 3, 69: 4, 70: 2,
+  71: 2, 72: 0, 73: 0, 74: 4, 75: 0, 76: 2, 77: 3, 78: 4, 79: 1, 80: 0,
+  81: 2, 82: 2, 83: 1, 84: 1, 85: 0, 86: 1, 87: 2, 88: 1, 89: 4, 90: 0,
+  91: 1, 92: 2, 93: 2, 94: 4, 95: 1, 96: 1, 97: 2, 98: 2, 99: 4, 100: 1,
+  101: 1, 102: 2, 103: 1, 104: 1, 105: 1, 106: 4, 107: 4, 108: 0, 109: 0, 110: 2,
+  111: 4, 112: 2, 113: 4, 114: 0, 115: 1, 116: 1, 117: 1, 118: 1, 119: 1, 120: 1,
+  121: 2, 122: 1, 123: 4, 124: 1, 125: 1, 126: 1, 127: 1, 128: 1, 129: 1, 130: 1,
+  131: 1, 132: 1, 133: 1, 134: 1, 135: 1, 136: 1, 137: 0, 138: 3, 139: 4, 140: 1,
+  141: 1, 142: 0, 143: 0, 144: 1, 145: 0, 146: 3, 147: 1, 148: 1, 149: 2, 150: 1,
+  151: 1, 152: 0, 153: 1, 154: 2, 155: 1, 156: 0, 157: 3, 158: 1, 159: 1, 160: 1,
+  161: 0, 162: 1, 163: 1, 164: 1, 165: 2, 166: 1, 167: 1, 168: 0, 169: 3, 170: 0,
+  171: 2, 172: 0, 173: 2, 174: 2, 175: 2, 176: 4, 177: 1, 178: 0, 179: 2, 180: 3,
+  181: 4, 182: 1, 183: 4, 184: 2, 185: 3, 186: 4, 187: 1, 188: 0, 189: 2, 190: 3,
+  191: 4, 192: 1, 193: 3, 194: 1, 195: 0, 196: 2, 197: 3, 198: 4, 199: 1, 200: 1
 };
 
-export const QUESTIONS = parseQuestions();
+
+// ==========================================
+// PSYCHOLOGY DATA
+// ==========================================
+
+const PSYCHOLOGY_RAW_DATA = `
+1. What is the literal meaning of the word "psychology"?
+Study of psychopathology
+Study of unconsciousness
+Study of consciousness
+Study of the soul
+Study of emotions
+
+2. What is the main subject of general psychology?
+Human’s bad emotions
+Mechanisms of the functioning of the psyche
+Biological processes in the brain
+Social interactions
+Animal’s behavior
+
+3. Who established the first experimental psychology laboratory?
+Aristotle
+Wilhelm Wundt
+Ivan Pavlov
+Carl Jung
+John Watson
+
+4. What is the primary focus of behaviorism?
+Cognitive processes
+Emotional development
+Observable behavior
+Personality development
+Neuroscience
+
+5. What are the research methods used in modern psychology?
+Myths and legends
+Psychoanalysis only
+Introspection and logic
+Experimental and diagnostic techniques
+Observations only
+
+6. Which school of psychology focuses on the connection between stimulus and response?
+Depth psychology
+Behaviorism
+Gestalt psychology
+Cognitive psychology
+Existential psychology
+
+7. How is psychology categorized as a science?
+It studies only philosophical ideas.
+It observes, describes, predicts, and explains behavior and mental processes.
+It focuses solely on experimental findings.
+It rejects natural sciences.
+It relies exclusively on introspection.
+
+8. What is introspection?
+Observing others' behavior
+Looking inward at oneself
+Asking questions in a survey
+Conducting experiments
+Recording natural events
+
+9. Who used introspection to study consciousness?
+Burrhus Skinner
+Wilhelm Wundt
+Abraham Maslow
+Ivan Pavlov
+Albert Bandura
+
+10. Which method involves viewing behavior of others without manipulation?
+Observation
+Case study
+Testing
+Survey
+Introspection
+
+11. What type of data can be obtained through observation?
+Only qualitative
+Only quantitative
+Both qualitative and quantitative
+Neither qualitative nor quantitative
+Hypothetical data
+
+12. What is a structured survey?
+Survey with random questions
+Survey with a clear purpose and standardized questions
+Survey that uses technical terms
+Survey with no specific goal
+Survey based only on demographical data
+
+13. What are independent variables in an experiment?
+Variables that remain constant
+Variables that are manipulated by the researcher
+Variables that are measured as outcomes
+Variables that cannot change
+Randomly selected variables
+
+14. In a psychological experiment, what is a dependent variable?
+A variable that is manipulated by the researcher
+A variable that remains constant throughout the study
+A variable that is measured as the outcome of the experiment
+A variable that cannot change under any circumstances
+A variable selected randomly without control
+
+15. What is the first step in the scientific method?
+Propose a hypothesis
+Observation
+Publish results
+Build a theory
+Test a variable
+
+16. What is the main purpose of using methods in psychology?
+To avoid scientific rules
+To study unrelated phenomena
+To manipulate behavior
+To teach ethical principles
+To reach a specific research aim
+
+17. What defines the observation method in psychology?
+Direct manipulation of variables
+Recording behavior as it naturally occurs
+Asking participants structured questions
+Analyzing dreams and fantasies
+Conducting long-term case histories
+
+18. What is typical for a case study in psychology?
+Short questionnaires given to random large samples
+In-depth analysis of a single person or a small group
+Controlled laboratory manipulation with unpredictable effects
+Measuring behavior at one single moment
+Using random assignment to groups
+
+19. What is a key feature of the interview method?
+Participants write anonymous responses by email
+Behavior is measured through body sensors
+Direct verbal communication with the participant
+Long-term tracking of development
+Statistical comparison of variables in its process
+
+20. What does testing in psychology typically involve?
+Measuring behavior over long periods to detect developmental trends
+Observing individuals in natural settings without intervention
+Administering standardized tasks to assess abilities, traits, or skills
+Conducting in-depth interviews to explore subjective experiences
+Observing individuals in setting with intervention
+
+21. Which statement correctly distinguishes longitudinal from cross-sectional studies?
+Longitudinal and cross-sectional studies usually study one participant’s case
+Longitudinal studies rely on experiments; cross-sectional studies rely on observations
+Longitudinal studies follow the same participants across a long period; cross-sectional studies compare different age groups at a single point in time
+Cross-sectional studies track individuals for years; longitudinal studies measure them only once
+Both methods require laboratory conditions to collect reliable data
+
+22. What does a correlational study investigate?
+The accuracy of psychological tests across different cultures
+Detailed personal history of a single individual
+Statistical relationships between two or more variables
+Changes in behavior caused by experimental manipulation
+Immediate emotional reactions in controlled settings
+
+23. What is motivation?
+A method to plan tasks.
+The process that initiates, guides, and maintains goal-oriented behaviors.
+A technique for managing emotions.
+A form of reward system.
+A cognitive assessment of outcomes.
+
+24. Which motivation theory suggests that behaviors are motivated by instincts?
+Drive Theory
+Instinct Theory
+Self-Determination Theory
+Humanistic Theory
+Expectancy Theory
+
+25. What is a key concept of Drive Theory?
+People are motivated by their instincts.
+People act to reduce internal tension caused by unmet needs.
+People aim to achieve self-actualization.
+People are motivated by autonomy and competence.
+People always act for rewards.
+
+26. What is a limitation of Instinct Theory of Motivation?
+It doesn’t explain behaviors, it just describes it.
+It doesn’t identify specific instincts.
+It overemphasizes social factors.
+It ignores physiological needs.
+It fails to consider emotional influences.
+
+27. What are the three key elements of Expectancy Theory of Motivation?
+Effort, action, and reaction
+Valence, instrumentality, and expectancy
+Intrinsic, extrinsic, and situational motivation
+Autonomy, competence, and relatedness
+Emotion, logic, and strategy
+
+28. What does Maslow’s hierarchy of needs represent?
+A list of biological drives.
+Levels of motivations based on human needs.
+Stages of emotional development.
+Steps to achieve cognitive growth.
+A method for intrinsic motivation.
+
+29. What is an example of extrinsic motivation?
+Solving a puzzle for fun
+Studying to earn a prize
+Reading a book for relaxation
+Learning to satisfy curiosity
+Exploring new skills for personal growth
+
+30. Which strategy would be the best for motivating others in a team?
+Criticize their weaknesses.
+Set goals and provide support.
+Avoid assigning responsibility.
+Devalue their achievements
+Focus solely on personal achievements.
+
+31. Which of the following is the correct order of needs in Maslow’s hierarchy from the most basic to the highest?
+Self-actualization, Esteem, Love and Belonging, Safety, Physiological
+Physiological, Safety, Love and Belonging, Esteem, Self-actualization
+Physiological, Love and Belonging, Safety, Esteem, Self-actualization
+Safety, Physiological, Love and Belonging, Esteem, Self-actualization
+Esteem, Physiological, Safety, Love and Belonging, Self-actualization
+
+32. Which of the following best describes Mihaly Csikszentmihalyi's concept of "flow"?
+A state of relaxation achieved through mindfulness and deep breathing.
+A state of complete absorption in an activity, where time feels altered, and the task is optimally challenging.
+A mindset focused on achieving external rewards and recognition.
+A process of multitasking effectively to maximize productivity.
+A mental state induced by repetitive physical activity.
+
+33. According to the excitement theory of motivation, what is the explanation people are more motivated to some activities rather to others?
+Because they try to balance energy levels through activities of varying intensity
+Because their behavior is mainly determined by biological reflexes
+Because they try to maintain an optimal personal level of excitement
+Because motivation depends only on external rewards and punishments
+Because relaxation activities are always more motivating than stimulating ones
+
+34. Which situation is most likely to produce flow according to American psychologist Csikszentmihalyi?
+When tasks are either too simple causing boredom, or too difficult causing anxiety
+When tasks are extremely easy and relaxing
+When challenges match personal skills, creating full focus and enjoyment
+When external rewards are the primary motivator
+When activities are done without concentration or clear goals
+
+35. According to Self-Determination Theory, which of the following are the three needs which shape internal motivation?
+Competence, connection, and autonomy
+Achievement, power, and pleasure
+Safety, security, and comfort
+Recognition, reward, and status
+Curiosity, imagination, and creativity
+
+36. Which type of motivation is increased when basic psychological needs are satisfied due to Self Determination Theory?
+Intrinsic motivation
+Extrinsic motivation
+Social motivation
+Biological motivation
+Random motivation
+
+37. What does self-determination mean in psychology?
+The ability to make choices and control one’s own behavior
+Acting only under pressure from external rewards or punishments
+Following instincts without conscious thought
+Relying entirely on others to make decisions
+Randomly choosing actions without purpose
+
+38. What does self-actualization refer to in psychology?
+Achieving material success, social recognition
+Acting without goals or planning
+Fully realizing personal potential by developing talents
+Following others’ directions in every decision
+Avoiding challenges and staying within comfort zones
+
+39. What is an example of intrinsic motivation?
+Solving a puzzle for personal enjoyment
+Studying to earn a prize
+Participating in a contest for a trophy
+Working to receive a salary
+Completing tasks to gain social recognition
+
+40. What is the main difference between intrinsic and extrinsic motivation?
+Intrinsic comes from personal satisfaction; extrinsic is from external rewards
+Intrinsic depends on social approval; extrinsic on personal interest
+Intrinsic is always stronger than extrinsic
+Extrinsic comes from habits; intrinsic comes from instincts
+Extrinsic never involves rewards
+
+41. What does cognitive psychology study?
+Physiological processes in the body.
+The interaction of human thinking, emotions, creativity, language, and problem-solving.
+Genetic inheritance and human evolution.
+Animal behavior in natural environments.
+The influence of society on individual behavior.
+
+42. What is an example of a cognitive process?
+Breathing and blood circulation.
+Recognizing environmental stimuli and solving problems.
+Distributing energy in the body.
+Regulating body temperature.
+Producing hormones.
+
+43. What is the difference between hot and cold cognition?
+Hot cognition is linked to recognizing, while cold cognition relates to language.
+Hot cognition includes emotions, while cold cognition does not involve emotions.
+Hot cognition works only during sleep, while cold cognition works during wakefulness.
+Hot cognition is related to genes, while cold cognition is related to culture.
+Hot cognition happens in stress, while cold cognition happens in normal situations.
+
+44. Which of the following is NOT a cognitive process?
+Perception.
+Breathing.
+Memory.
+Learning.
+Decision-making.
+
+45. What does the "g-factor" concept by Charles Spearman mean?
+The ability to develop knowledge in one area only.
+General cognitive ability that affects performance on different cognitive tests.
+Skill specifically in math-related tasks.
+A group of social factors that influence intelligence.
+The ability to adapt to physical challenges.
+
+46. Which of the following is one of the eight types of intelligence proposed by Howard Gardner?
+Fluid Intelligence
+Financial Intelligence
+Visual-Spatial Intelligence
+Creative Intelligence
+Technological Intelligence
+
+47. What is the ability to recognize emotions in oneself and others called in the context of Emotional Intelligence?
+Use emotions
+Perceive emotions
+Manage emotions
+Control emotions
+Express emotions
+
+48. According to Cattell’s theory, which of the following best describes fluid intelligence?
+The ability to use accumulated knowledge and experience.
+The ability to learn new things fast and abstractly
+The ability to recall facts and general information quickly.
+The ability to communicate effectively in social situations.
+The ability to rely on the intelligence and experience of others.
+
+49. What does the gambler’s fallacy refer to?
+The belief that a person can control random outcomes because he is just lucky.
+The belief that past events affect the probability of future events in a way that contradicts the laws of probability.
+The assumption that winning streaks are more likely to continue indefinitely.
+The tendency to bet larger amounts after a series of losses.
+The belief that luck always balances out in the long run.
+
+50. One of the cognitive biases:
+Attraction
+Framing effect
+Decision making
+Hot cognition
+Cold cognition
+
+51. How do smart people see their mistakes?
+They ignore them.
+They feel bad and give up.
+They try not to make mistakes by avoiding risks.
+They use mistakes as chances to learn and improve.
+They blame others for them.
+
+52. What is the difference between fluid intelligence and crystallized intelligence?
+Fluid intelligence is about creativity, and crystallized intelligence is about logic.
+Crystallized intelligence is something you're born with, but fluid intelligence is something you learn.
+Fluid intelligence is about memorizing, and crystallized intelligence is about solving puzzles.
+Fluid intelligence helps solve new problems, while crystallized intelligence is what you know from past learning.
+There is no difference.
+
+53. Why are curious people often seen as smart?
+They always agree with others.
+They never ask questions to avoid looking unsure.
+They only focus on finding what’s wrong.
+They ask questions and try to learn about new ideas and possibilities.
+They stick to things they already understand.
+
+54. Why do smart people sometimes wait to finish tasks?
+They don’t care about deadlines.
+They work better when under pressure.
+They are bad at managing their time.
+They use the time to think of better ideas or solutions.
+They forget to do the work.
+
+55. What is «metacognition»?
+The ability to process information at a faster rate than others.
+The ability to think about how are you thinking
+The ability to memorize large amounts of information quickly.
+The ability to understand emotions and manage stress effectively.
+The ability to perform tasks without making mistakes.
+
+56. What does perception allow us to do?
+Make logical decisions
+Interpret and understand sensory information
+Remember past events
+Solve complex problems
+Focus on one task at a time
+
+57. What is the function of attention in cognition?
+To store information for future use
+To focus awareness on specific stimuli
+To recall information from memory
+To interpret sensory data
+To create new concepts
+
+58. Which of the following is an example of a real cognitive bias?
+Problem-solving bias
+Memory recall bias
+Confirmation bias
+Reasoning bias
+Learning new information bias
+
+59. Which cognitive bias involves making judgments based on the first piece of information encountered?
+Availability bias
+Self-serving bias
+Confirmation bias
+Anchoring bias
+Bandwagon effect
+
+60. What is the definition of stress in psychology?
+A purely physical reaction
+A feeling of strain and pressure
+A state of euphoria and relaxation
+The absence of challenges
+A feeling of losing hope
+
+61. What is "eustress"?
+Negative stress causing harm
+Positive stress that motivates and challenges
+Chronic stress leading to fatigue
+A complete absence of stress
+None of the above
+
+62. Which is NOT an instinctive stress response due to 4F theory?
+Fight
+Flight
+Fawn
+Freeze
+Flow
+
+63. Which of the following is an example of natural self-regulation?
+Autogenic training
+Breathing techniques
+Interacting with nature
+Guided meditation
+Cognitive restructuring
+
+64. What helps reduce stress factors effectively?
+Focusing on uncontrollable factors
+Ignoring stressors
+Understanding what is under your control
+Avoiding self-reflection
+Multitasking
+
+65. What is the primary goal of regular stress management practices?
+Avoiding all forms of stress
+Suppressing emotional responses
+Understanding and managing stressors effectively
+Increasing stress hormones like cortisol
+Multitasking to reduce stress
+
+66. What does self-approval involve?
+Seeking validation from others
+Ignoring personal achievements
+Affirming positive thoughts about oneself
+Avoiding self-reflection entirely
+Criticizing one’s outcomes
+
+67. What is an emotion in psychology?
+A subjective response accompanied by physiological changes and often linked to behavioral changes
+A long-lasting general feeling unrelated to specific events
+A purely cognitive and rational evaluation of a situation without bodily response
+A physical sensation without any psychological component
+A random thought that has no effect on behavior
+
+68. Which of the following are considered basic emotions?
+Happiness, sadness, fear, anger, disgust
+Motivation, curiosity, boredom, excitement
+Relaxation, stress, anxiety, flow
+Love, ambition, pride, jealousy
+Hunger, thirst, pain, pleasure
+
+69. What are primary emotions?
+Immediate emotional reactions to a situation
+Emotions learned through social experience
+Feelings caused by physical sensations only
+Emotions that appear after long reflection
+Emotions that are always negative
+
+70. What is emotional intelligence (EI)?
+The ability to recognize, understand, and manage one’s own and others’ emotions
+The capacity to memorize facts and solve mathematical problems
+A skill to act without considering feelings of others
+The tendency to avoid emotional situations
+The ability to control others’ emotions
+
+71. Which of the following are core components of emotional intelligence?
+Self-awareness, self-regulation, motivation, empathy, social skills
+Motivation, empathy, attention, perception, reasoning
+Strength, speed, self-awareness, endurance, flexibility
+Empathy, social skills creativity, problem-solving, motivation
+Self-regulation, motivation, reflection, imitation, repetition
+
+72. Who is credited with developing the first typology of temperaments in ancient times?
+Hippocrates
+Aristotle
+Immanuel Kant
+Ivan Pavlov
+Claudius Galen
+
+73. According to Ivan Pavlov, what are the three innate properties of the nervous system that define temperament?
+Speed, focus, and energy
+Strength, flexibility, and determination
+Mobility, agility, and attention
+Reaction time, patience, and balance
+Strength, mobility, and balance
+
+74. Which temperament thrives on leadership and immediate action?
+Phlegmatic
+Melancholic
+Sanguine
+None of them
+Choleric
+
+75. What does the term "temperament" primarily refer to in psychology?
+A learned set of personality traits
+The social environment of an individual
+A person's education level
+Cultural norms
+Innate, biologically-based behavioral tendencies
+
+76. Which philosopher divided temperaments into 'temperaments of feeling' and 'temperaments of activity'?
+Aristotle
+Friedrich Nietzsche
+Socrates
+Descartes
+Immanuel Kant
+
+77. Which temperament is described as being calm, analytical, and systematic in problem-solving?
+Sanguine
+Choleric
+Melancholic
+Unpredictable
+Phlegmatic
+
+78. What type of temperament is most likely to quickly adapt to new plans or circumstances?
+Phlegmatic
+Melancholic
+Choleric
+Inflexible
+Sanguine
+
+79. What is the primary distinction between temperament and character?
+Temperament changes significantly, while character is static.
+Temperament is based on socialization, while character is innate.
+Temperament involves core values, while character does not.
+Temperament develops through life experience, while character does not.
+Temperament is biological, while character is shaped by life experiences.
+
+80. Which temperament needs structure and emotional support to thrive?
+Sanguine
+Phlegmatic
+Choleric
+Unpredictable
+Melancholic
+
+81. Which of the following best defines personality?
+A set of physical characteristics that make a person unique
+The characteristic patterns of thoughts, feelings, and behaviors that make a person unique
+A person's social media presence and public image
+The sum of a person's professional achievements
+A collection of temporary emotional states
+
+82. In Freud's theory of personality, which component operates on the "pleasure principle"?
+Ego
+Superego
+Id
+Shadow
+Persona
+
+83. In Freud's theory of personality, which component operates on the "principle of morality"?
+Ego
+Superego
+Id
+Anima
+Animus
+
+84. In Freud's theory of personality, which component operates on the "reality principle"?
+Ego
+Superego
+Id
+Anima
+Shadow
+
+85. What is the main function of Jung's "Persona" archetype?
+It represents our animal instincts
+It is the outward face we present to the world
+It connects us to our unconscious mind
+It represents our true self
+none of the above
+
+86. What does Jung's "Shadow" archetype primarily represent?
+The social roles we play
+The hidden, repressed aspects of our psyche
+The creative, intuitive part of our mind
+The collective unconscious
+None of the above
+
+87. Which of the following best reflects the relationship between the "Shadow" and the "Persona" in Jung’s theory?
+They are identical in function
+They are opposites that complement each other
+They are both repressed aspects of the psyche
+The Persona directly replaces the Shadow
+None of the above
+
+88. In Eric Berne's Transactional Analysis, which personality state is characterized by logic, reasoning, and analyzing situations?
+Parent
+Child
+Adult
+Superego
+Shadow
+
+89. What does the "Parent" state in Berne's Transactional Analysis primarily reflect?
+Spontaneous feelings and impulses
+Learned rules, values, and behaviors
+Logical reasoning and problem-solving
+Subconscious desires
+None of the above
+
+90. Which of the following best describes the "Child" state due to Berne's Theory?
+It regulates emotions logically
+It fully replaces the "Parent" state
+It expresses creativity, emotions, and spontaneity
+It analyzes and processes information
+None of the above
+
+91. Which personality state in Berne’s theory is best suited for solving problems in an objective manner?
+Parent
+Child
+Adult
+Shadow
+Superego
+
+92. Which of the Big Five personality traits is associated with being organized, responsible, and goal directed?
+Openness
+Extraversion
+Agreeableness
+Conscientiousness
+Neuroticism
+
+93. Which of the Big Five personality traits reflects a tendency to experience emotions such as anxiety, anger, and sadness?
+Extraversion
+Neuroticism
+Openness
+Agreeableness
+Conscientiousness
+
+94. Which Big Five trait is linked to being imaginative, curious, and open to new experiences?
+Agreeableness
+Extraversion
+Conscientiousness
+Openness
+Neuroticism
+
+95. What does the "Extraversion" trait in the Big Five describe?
+A preference for solitude and reflection
+A tendency to seek social interaction and energy from others
+A focus on organization and planning
+A disposition towards anxiety and moodiness
+A concern for others' well-being
+
+96. Which of the Big Five traits is characterized by trust, kindness, and a cooperative nature?
+Conscientiousness
+Openness
+Agreeableness
+Extraversion
+Neuroticism
+
+97. What is self-concept?
+The way others perceive you
+Your physical appearance
+Your answer to the question "Who am I?"
+Your professional achievements
+Your social status
+
+98. Which personality type in Jung's theory represents the unconscious feminine side in males and masculine tendencies in women?
+Shadow
+Persona
+Self
+Anima/Animus
+Ego
+
+99. What is personal development?
+A random process of improving life.
+A single event that transforms a person.
+A deliberate effort to improve life.
+Attending personal growth courses.
+Lifelong self-education without specific goals.
+
+100. Which statement about self-awareness is correct?
+Self-awareness helps avoid mistakes.
+It is the analysis of other people’s actions.
+It includes understanding emotions, thoughts, and behaviors.
+It is unnecessary for personal growth.
+Self-awareness is limited to analyzing past experiences.
+
+101. Which techniques will help to develop self-awareness the best way?
+Playing games and having fun.
+Journaling and meditation.
+Watching movies about fiction heroes.
+Constantly working on projects.
+Spontaneous conversations and small-talks.
+
+102. What are the benefits of increased self-awareness?
+Better emotional regulation and decision-making.
+Faster learning of technical skills.
+The ability to avoid all negative emotions.
+Complete elimination of personal weaknesses.
+Greater reliance on others for decisions.
+
+103. How can a growth mindset influence personal development?
+By encouraging a focus on innate talent over effort.
+By promoting resilience and learning from setbacks.
+By avoiding challenges to prevent failure.
+By believing abilities cannot be improved.
+By eliminating the need for continuous learning.
+
+104. What is a characteristic of a fixed mindset?
+Viewing failure as an opportunity to grow.
+Believing abilities are too hard to change.
+Embracing challenges and persisting through setbacks.
+Rewarding effort and learning from mistakes.
+Viewing effort as a pathway to mastery.
+
+105. Which technique helps time management?
+Working without breaks to maximize productivity.
+The Pomodoro Technique and time-blocking.
+Avoiding task prioritization.
+Focusing on multiple tasks at once.
+Procrastinating with the hope problems will just go away.
+
+106. What does prioritization in time management involve?
+Ignoring important tasks to focus on urgent ones.
+Using tools like the Eisenhower Matrix to identify key tasks.
+Completing all tasks simultaneously.
+Avoiding setting boundaries to save time.
+Spending equal time on every activity.
+
+107. What is one way to overcome imposter syndrome?
+Avoid challenging tasks to feel secure.
+Focus on recognizing your efforts and contributions.
+Assume your success is due to external factors.
+Avoid feedback and constructive criticism.
+Stop acknowledging your achievements.
+
+108. What is intrinsic motivation?
+Motivation driven by external rewards.
+Motivation that comes from within, like a passion for a task.
+Motivation that depends on peer approval.
+Motivation based on competition with others.
+Motivation that fades without external pressure.
+
+109. What is a benefit of identifying personal values?
+Making random choices based on circumstances.
+Aligning goals with what is meaningful to you.
+Focusing solely on extrinsic rewards.
+Ignoring intrinsic motivation in decision-making.
+Relying on others to define your priorities.
+
+110. Which example demonstrates a growth mindset?
+Giving up when faced with difficulty.
+Viewing challenges as opportunities to improve.
+Believing you cannot develop new skills.
+Avoiding mistakes by not taking risks.
+Sticking only to what you already know.
+
+111. Which of the following best defines assertive behavior?
+Dominating others to ensure your needs are met, even at their expense.
+Avoiding conflict by prioritizing the needs of others over your own.
+Expressing your thoughts, feelings, and needs honestly and respectfully while respecting others' rights.
+Ignoring others’ opinions and focusing solely on your own perspective.
+Remaining silent to avoid expressing disagreement or dissatisfaction.
+
+112. What is the “Halo Effect”?
+Overgeneralizing based on one positive trait
+Judging based on stereotypes
+Projecting your emotions onto others
+Focusing on first impressions
+Avoiding non-verbal cues
+
+113. What do crossed arms during a conversation often indicate?
+Confidence
+Disagreement
+Politeness
+Happiness
+Attractiveness
+`;
+
+const PSYCHOLOGY_ANSWER_KEY: Record<number, number> = {
+  1: 3, 2: 1, 3: 1, 4: 2, 5: 3, 6: 1, 7: 1, 8: 1, 9: 1, 10: 0,
+  11: 2, 12: 1, 13: 1, 14: 2, 15: 1, 16: 4, 17: 1, 18: 1, 19: 2, 20: 2,
+  21: 2, 22: 2, 23: 1, 24: 1, 25: 1, 26: 0, 27: 1, 28: 1, 29: 1, 30: 1,
+  31: 2, 32: 1, 33: 2, 34: 2, 35: 0, 36: 0, 37: 0, 38: 2, 39: 0, 40: 0,
+  41: 1, 42: 1, 43: 1, 44: 1, 45: 1, 46: 2, 47: 1, 48: 1, 49: 1, 50: 1,
+  51: 3, 52: 3, 53: 3, 54: 3, 55: 1, 56: 1, 57: 1, 58: 2, 59: 3, 60: 1,
+  61: 1, 62: 4, 63: 2, 64: 2, 65: 2, 66: 2, 67: 0, 68: 0, 69: 0, 70: 0,
+  71: 0, 72: 4, 73: 4, 74: 4, 75: 4, 76: 4, 77: 4, 78: 4, 79: 4, 80: 4,
+  81: 1, 82: 2, 83: 1, 84: 0, 85: 1, 86: 1, 87: 1, 88: 2, 89: 1, 90: 2,
+  91: 2, 92: 3, 93: 1, 94: 3, 95: 1, 96: 2, 97: 2, 98: 3, 99: 2, 100: 2,
+  101: 1, 102: 0, 103: 1, 104: 1, 105: 1, 106: 1, 107: 1, 108: 1, 109: 1, 110: 1,
+  111: 2, 112: 0, 113: 1
+};
+
+
+// ==========================================
+// EXPORTS
+// ==========================================
+
+export const QUESTIONS_PHILOSOPHY = parseQuestions(PHILOSOPHY_RAW_DATA, PHILOSOPHY_ANSWER_KEY);
+export const QUESTIONS_PSYCHOLOGY = parseQuestions(PSYCHOLOGY_RAW_DATA, PSYCHOLOGY_ANSWER_KEY);
