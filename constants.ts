@@ -21,7 +21,7 @@ const parseQuestions = (rawData: string, answerKey?: Record<number, number>): Qu
     // First line is the question text
     // Remove the leading number and dot (e.g. "1. <question>Text" or "1. Text")
     let questionText = lines[0].replace(/^\d+\.\s*/, '').trim();
-    
+
     // Remove <question> tag if present (legacy format)
     questionText = questionText.replace('<question>', '').trim();
 
@@ -29,14 +29,18 @@ const parseQuestions = (rawData: string, answerKey?: Record<number, number>): Qu
     // Filter out lines that might be "Ответ:" (Answer keys in raw text) or empty
     let options = lines.slice(1).filter(line => !line.toLowerCase().startsWith('ответ:'));
 
-    // If options contain labels like "a)", "b)", remove them for cleaner UI
-    options = options.map(opt => opt.replace(/^[a-z]\)\s*/i, '').replace(/^\d+\.\s*/, ''));
+    // If options contain labels like "a)", "b)", "•" remove them for cleaner UI
+    options = options.map(opt => opt
+      .replace(/^[a-zа-я]\)\s*/i, '') // a) or A)
+      .replace(/^\d+\.\s*/, '') // 1.
+      .replace(/^[•\-\*]\s*/, '') // •, -, *
+    );
 
     if (options.length > 0) {
       // Extract ID from the first line for mapping
       const idMatch = lines[0].match(/^(\d+)\./);
       const id = idMatch ? parseInt(idMatch[1]) : questions.length + 1;
-      
+
       const q: Question = {
         id: id,
         text: questionText,
@@ -2308,3 +2312,622 @@ const PSYCHOLOGY_ANSWER_KEY: Record<number, number> = {
 
 export const QUESTIONS_PHILOSOPHY = parseQuestions(PHILOSOPHY_RAW_DATA, PHILOSOPHY_ANSWER_KEY);
 export const QUESTIONS_PSYCHOLOGY = parseQuestions(PSYCHOLOGY_RAW_DATA, PSYCHOLOGY_ANSWER_KEY);
+
+// ==========================================
+// CULTUROLOGY DATA
+// ==========================================
+
+const CULTUROLOGY_RAW_DATA = `
+1.The term "hegemony," as used in Cultural Studies to describe the dominant cultural norms and values that maintain social control, was originally developed by which thinker?
+E) Clifford Geertz
+C) Antonio Gramsci
+D) Jean Baudrillard
+B) Theodor Adorno
+A) Karl Marx
+
+2. What is the main focus of cultural relativism in Cultural Studies?
+C) That each culture must be understood in its own terms without ethnocentric judgment
+E) That culture is determined solely by economic systems
+D) The classification of cultures according to religious traditions
+B) That all cultural practices should be judged by universal moral standards
+A) The belief that some cultures are more advanced than others
+
+3. What role does media play in Cultural Studies?
+D) It is studied mainly for its technological innovations
+C) It is analyzed as a powerful tool that shapes ideology, identity, and cultural norms
+A) It is considered a neutral transmitter of factual information
+B) It is ignored in favor of traditional cultural expressions
+E) It is valued only for its entertainment function
+
+4. Which of the following best defines culture in the context of Cultural Studies?
+C) The shared beliefs, values, customs, behaviors, and artifacts of a group
+B) The collection of economic systems in a society
+A) The study of biology and human evolution
+D) The formal political structure of a society
+E) A static and unchanging tradition passed through generations
+
+5. Akhmet Baitursynov is primarily known for:
+E) Translating Chinese classics
+C) Creating the Kazakh alphabet reform and linguistic studies
+D) Organizing musical festivals
+A) Writing romantic poetry
+B) Leading the Red Army
+
+6. Who is considered the father of American cultural anthropology?
+C) Lewis Henry Morgan
+D) Michel Foucault
+A) Clifford Geertz
+B) Bronisław Malinowski
+E) Franz Boas
+
+7. The philosophy of "Homo Ludens" by Johan Huizinga emphasizes:
+A) War as the foundation of culture
+E) Politics as the highest cultural form
+B) Logic as the main human function
+C) Play as the basis of culture and civilization
+D) Economy as the root of culture
+
+8. What is the difference between material and non-material culture
+C) One includes physical objects, the other includes beliefs and values
+D) Both are the same
+A) One is old, one is new
+B) One is correct, one is wrong
+E) One is superior to the other
+
+9. Which term is associated with Margaret Mead’s studies of adolescence in Samoan society?
+C) Ethnocentrism
+A) Cultural conflict
+E) Power dynamics
+D) Technological determinism
+B) Cultural relativism
+
+10. Which concept describes the coexistence of diverse cultures in one society?
+D) Ethnocentrism
+C) Cultural purity
+E) Colonialism
+B) Multiculturalism
+A) Nationalism
+
+11. Researchers believe that an individual’s norms and actions should be understood by others in terms of that individual’s own cultural context. This concept is referred to as:
+Cultural interpretation
+Cultural sensitivity
+Cultural relativism
+Cultural boundaries
+Cultural aspect
+
+12. An exchange student travels to Morocco to learn local language and culture. The first month he was there, he spent a lot of time at local bazaars where he learned about Moroccan "material culture". Which of the following is not an example of material culture?
+Traditions
+Vases
+Artifacts
+Souvenirs
+Necklaces
+
+13. Proper gestures and body language are important during business interactions. When conducting business with other cultures, how should we understand gestures (such as shaking your head)?
+Gestures are understood by people and animals in the same way
+Gestures are interpreted in the same way by all cultures
+Gestures are not needed
+Gestures are defined uniquely by each culture
+Gestures are universal
+
+14. Samat travels to a new country. While in line at the train station, other people stand very close to him closer than in his country. He immediately feels anxious and uncomfortable. The disorientation a person may feel when experiencing an unfamiliar way of life changes in social environments is referred to as:
+Culture shock
+Culture clash
+Cultural independency
+Cultural sickness
+Cultural dependency
+
+15. The philosophy of "Homo Ludens" by Johan Huizinga emphasizes:
+A) War as the foundation of culture
+E) Politics as the highest cultural form
+D) Economy as the root of culture
+B) Logic as the main human function
+C) Play as the basis of culture and civilization
+
+16. What is Al-Farabi best known for in the history of philosophy?
+B) Founding political theory
+E) Inventing the printing press
+A) Discovering algebra
+C) Synthesizing Greek philosophy with Islamic thought
+D) Writing only in poetry
+
+17. What is the title of Al-Farabi's most famous political work?
+A) The Republic
+E) The Perfect Soul
+C) The Virtuous City (al-Madina al-Fadila)
+D) The Path to Wisdom
+B) The Book of Justice
+
+18. Which of the following is a prominent symbol of modern Kazakh national identity?
+D) Tundra
+E) Dombyra
+A) Yurt
+C) Silk
+B) Golden Man (Altyn Adam)
+
+19. What is the traditional Kazakh string instrument often used in contemporary performances?
+C) Dombyra
+B) Kyl-kobyz
+D) Balalaika
+A) Komuz
+E) Oud
+
+20. Which city is considered the cultural and creative hub of modern Kazakhstan?
+B) Almaty
+C) Turkestan
+D) Atyrau
+A) Aktobe
+E) Shymkent
+
+21. The "Rukhani Zhangyru" program aims to:
+B) Modernize national identity through culture and education
+E) Open casinos
+C) Expand natural gas
+D) Promote agriculture
+A) Build more highways
+
+22. Which element is often used in modern Kazakh fashion design?
+E) Leather only
+A) Silk from China
+B) Wool from Europe
+C) Traditional ornaments and embroidery
+D) Denim only
+
+23. "The Mind of Primitive Man" was written by:
+A) Franz Boas
+B) Edward Tylor
+D) Raymond Williams
+C) Bronisław Malinowski
+E) Stuart Hall
+
+24. Ernst Cassirer believed that humans are:
+D) Power seekers
+A) Political animals
+B) Rational calculators
+C) Symbolic animals
+E) Economic beings
+
+25. What is a "cultural code"?
+C) A set of symbolic systems and meanings shared by a culture
+E) A scientific theory of biology
+D) A computer program
+B) A universal legal system
+A) A genetic structure that determines culture
+
+26. A cultural code can best be described as:
+A) The rules of grammar
+D) The climate of a region
+B) The visual appearance of a culture
+E) Religious texts only
+C) A deep structure of meanings, myths, and values that influence behavior
+
+27. In media and communication studies, cultural codes are used to:
+E) Produce industrial goods
+C) Set economic policies
+D) Interpret weather data
+B) Decode and analyze meaning in texts and media
+A) Create scientific models
+
+28. Which of the following fields most frequently studies cultural codes?
+E) Architecture
+A) Chemistry
+C) Culturology and Anthropology
+D) Geometry
+B) Engineering
+
+29. The idea that "food is a communication system" comes from which approach?
+E) Pharmacology
+B) Semiotics
+D) Behavioral economics
+C) Astronomy
+A) Political science
+
+30. When someone misinterprets a cultural gesture, it may be due to:
+B) Lack of education
+C) A misunderstanding of the cultural code
+A) Language error
+D) Memory loss
+E) Technology failure
+
+31. Which concept best describes a community's general perception of the world and human existence?
+D) Fashion
+A) Legislation
+C) Geography
+E) Demographics
+B) Worldview
+
+32. How are ethos and worldview transmitted within a culture?
+D) Through religion and art
+C) Through language and communication
+B) Through traditions and rituals
+E) All of the above
+A) Through media and education
+
+33. What does the term "ethos" refer to in cultural studies?
+A) Economic structure
+E) A form of entertainment
+D) A political ideology
+B) A set of ethical norms and moral attitudes shared by a community
+C) The biological traits of a population
+
+34. Which of the following is an element of non-material culture?
+B) Language
+D) Clothing
+E) Food
+C) Tools
+A) Architecture
+
+35. What term refers to judging another culture solely by the values and standards of one's own culture?
+B) Cultural relativism
+A) Multiculturalism
+E) Enculturation
+C) Ethnocentrism
+D) Cultural diffusion
+
+36. What is the most commonly accepted definition of culture?
+D) Economic system of a nation
+C) Shared beliefs, values, and practices of a group
+B) Technological advancement
+A) Biological inheritance
+E) Physical environment
+
+37. Which studio has historically played a central role in producing Kazakh films?
+E) Alatau Films
+B) Kazakhfilm
+A) Studio Mosfilm
+C) Central Asia Pictures
+D) Steppe Studios
+
+38. What is the primary function of language in human society?
+B) Survival instinct
+A) Decoration
+E) Imitation
+C) Communication
+D) Genetic transfer
+
+39. What is non-verbal communication?
+E) Silent reading
+A) Communication using language
+D) Grammar correction
+C) Writing emails
+B) Communication without words
+
+40. Which of the following is NOT a component of verbal communication?
+B) Syntax
+E) Grammar
+D) Facial expressions
+C) Tone of voice
+A) Vocabulary
+
+41. What is digitalization in the context of culture?
+C) The integration of digital technologies into cultural practices and institutions
+D) The destruction of traditional customs
+B) Applying mathematical models to society
+E) The development of agricultural tools
+A) Using paper records for data storage
+
+42. Which of the following is an example of digital culture?
+B) Oral storytelling
+A) Traditional dances
+E) Religious rituals
+C) Social media content creation
+D) Folk art
+
+43. What does the term "digital divide" refer to?
+A) The separation of urban and rural areas
+C) The difference between two cultures
+B) The gap between those who have access to digital technologies and those who do not
+E) Generational change in language
+D) A global peace treaty
+
+44. Which of the following best illustrates global digital culture?
+E) National flags
+D) Religious sermons
+B) Traditional pottery
+C) Viral internet memes
+A) A local newspaper
+
+45. What role does artificial intelligence (AI) play in digital culture?
+C) It replaces humans in sports
+B) It helps translate languages, create art, and analyze cultural data
+A) It is used only in factories
+E) It prevents online learning
+D) It destroys internet access
+
+46. Digital humanities refers to:
+B) Study of ancient tools
+D) Replacement of books with robots
+C) The use of digital tools to study humanities disciplines
+E) Natural sciences
+A) A new religion
+
+47. Which social media platform is known for its cultural influence globally?
+E) Firefox
+A) Telegram
+C) TikTok
+D) Excel
+B) WhatsApp
+
+48. Which technology is commonly used in the digital preservation of cultural sites?
+E) Morse code
+C) 3D scanning and virtual reality
+D) Typewriters
+B) Artificial intelligence
+A) Steam engines
+
+49. Which of the following is an example of digital culture?
+D) Folk art
+A) Traditional dances
+C) Social media content creation
+E) Religious rituals
+B) Oral storytelling
+
+50. What is digitalization in the context of culture?
+E) The development of agricultural tools
+C) The integration of digital technologies into cultural practices and institutions
+D) The destruction of traditional customs
+A) Using paper records for data storage
+B) Applying mathematical models to society
+
+51. How has digitalization changed the way cultural heritage is preserved?
+E) It limits international cooperation
+A) It has reduced access to heritage
+C) It destroys historical records
+B) It allows for digital archiving and wider dissemination
+D) It prevents cultural exchange
+
+52. What is semiotics?
+D) The study of grammar rules
+A) The study of stars
+E) The study of human anatomy
+B) The study of historical facts
+C) The study of signs and symbols and their use or interpretation
+
+53. Who is considered one of the founding fathers of modern semiotics?
+B) Charles Darwin
+A) Karl Marx
+C) Ferdinand de Saussure
+D) Albert Einstein
+E) Max Weber
+
+54. Which field most commonly uses semiotic analysis today?
+D) Mathematics
+C) Media and cultural studies
+B) Chemistry
+A) Physics
+E) Engineering
+
+55. In Peirce’s semiotics, what are the three types of signs?
+C) Word, sound, image
+D) Denotation, connotation, myth
+E) Logical, poetic, emotional
+B) Icon, index, symbol
+A) Natural, supernatural, artificial
+
+56. Which alphabet was historically used by early Turkic peoples?
+C) Orkhon-Yenisey script (Old Turkic script)
+A) Latin
+B) Cyrillic
+D) Arabic script only
+E) Greek script
+
+57. What is a defining characteristic of traditional Turkic culture?
+B) Maritime navigation
+D) Urban industrialization
+E) Slave-based economy
+C) Nomadic pastoralism
+A) Sedentary farming lifestyle
+
+58. What is the significance of the Orkhon inscriptions?
+B) Ancient Turkic legal codes
+C) The earliest known written records in a Turkic language
+E) Medical texts
+D) Treaties with China
+A) Religious commandments
+
+59. What does the word "Tengri" refer to in ancient Turkic beliefs?
+E) A mountain spirit
+A) A type of garment
+C) The sky deity or god of the heavens
+D) A battle strategy
+B) A sacred book
+
+60. What is a "yurt" in Turkic tradition?
+C) A portable round tent used by nomads
+E) A musical instrument
+B) A traditional horse saddle
+A) A royal title
+D) A sacred religious relic
+
+61. Which musical instrument is commonly found in Turkic folk culture?
+C) Sitar
+E) Harp
+D) Oud
+A) Violin
+B) Dombra
+
+62. What role did oral poetry and storytelling play in Turkic culture?
+B) It was used to pass time during winter
+A) It was mainly entertainment for children
+D) It replaced written language entirely
+C) It preserved history, values, and traditions
+E) It was imported from neighboring cultures
+
+63. The epic "Manas" is associated with which Turkic group?
+B) Kazakhs
+D) Kyrgyz
+C) Uzbeks
+A) Uighurs
+E) Tatars
+
+64. Which of the following empires was founded by a Turkic people?
+C) Mongol Empire
+A) Roman Empire
+D) Han Dynasty
+B) Ottoman Empire
+E) Persian Empire
+
+65 Which religion had a strong influence on the Turkic peoples before the spread of Islam?
+E) Confucianism
+A) Christianity
+D) Buddhism only
+C) Shamanism and Tengrism
+B) Hinduism
+
+66. Cultural hybridization refers to:
+C. The rejection of technological advancements
+A. The loss of national identity
+B. The merging of traditional and modern practices
+D. The revival of indigenous languages
+E. The political unification of states
+
+67. Which ancient philosopher was born in the territory of present Kazakhstan?
+A. Aristotle
+E. Confucius
+C. Ibn Sina
+B. Al-Farabi
+D. Descartes
+
+68. Which famous Kazakh poet and philosopher wrote "The Book of Words" ("Kara Sozder")?
+C. Abai Kunanbayev
+B. Saken Seifullin
+E. Zhambyl Zhabayev
+A. Shakarim
+D. Al-Farabi
+
+69. What does the eagle on the Kazakh flag symbolize?
+C. Religion
+A. War
+E. Peace
+B. Power and freedom
+D. Agriculture
+
+70. Name Kazakh leader who led a major national-liberation uprising in the 19th century
+E. Tole Bi
+C. Abulkhair Khan
+A. Ablai Khan
+B. Kenesary Kasymov
+D. Kerey Khan
+
+71. The process of introducing an individual to culture, assimilating existing habits, norms, and values peculiar to a given culture is
+Habits
+Canon
+Inculturation
+Norms
+Values
+
+72. The system of values and norms of behavior characteristic of individual demographic, professional and other groups that does not fundamentally contradict the dominant culture is
+Norms
+Religion
+Canon
+Counterculture
+Subculture
+
+73. Mass culture is the culture of the masses (people), the majority of members of society, a culture that, in principle, cannot generally be at the highest level with the continuity of cultural development (creativity), so it is also known as
+not popular
+popular
+subculture
+elite
+individual
+
+74. The project "Sacred Geography of Kazakhstan" was launched in
+2017
+2020
+2024
+2022
+2018
+
+75. The project "Cultural Heritage" was developed in 2003 on the initiative of the President of Kazakhstan N. Nazarbayev. The implementation of the program began in
+2009
+2010
+2007
+2004
+2006
+
+76. what is the name of Khodzha Akhmed Yasawi's famous work?
+Dīwān-i Hikmat (Compendium of Wisdom)
+Blessed knowledge
+History
+Religion
+Royal wizdom
+`;
+
+const CULTUROLOGY_ANSWER_KEY: Record<number, number> = {
+  1: 1, // C) Gramsci
+  2: 0, // C) Terms
+  3: 1, // C) Tool
+  4: 0, // C) Shared beliefs
+  5: 1, // C) Alphabet
+  6: 4, // E) Franz Boas
+  7: 3, // C) Play
+  8: 0, // C) Objects/Beliefs
+  9: 4, // B) Not B? Mead = Relativism. B is 4th option.
+  10: 3, // B) Multiculturalism
+  11: 2, // Cultural Relativism, option 3
+  12: 0, // Traditions (non-material)
+  13: 3, // Defined uniquely
+  14: 0, // Culture shock
+  15: 4, // C) Play (Q15 matches Q7 answer C)
+  16: 3, // C) Greek + Islamic
+  17: 2, // C) Virtuous City
+  18: 4, // B) Golden Man
+  19: 0, // C) Dombyra
+  20: 0, // B) Almaty
+  21: 0, // B) Modernize
+  22: 3, // C) Traditional ornaments
+  23: 0, // A) Franz Boas
+  24: 3, // C) Symbolic animals
+  25: 0, // C) Semiotics/Code
+  26: 4, // C) Deep structure
+  27: 3, // B) Decode
+  28: 2, // C) Culturology
+  29: 1, // B) Semiotics
+  30: 1, // C) Misunderstanding code
+  31: 4, // B) Worldview
+  32: 3, // E) All
+  33: 3, // B) Ethical norms
+  34: 0, // B) Language
+  35: 3, // C) Ethnocentrism
+  36: 1, // C) Definition
+  37: 1, // B) Kazakhfilm
+  38: 3, // C) Communication
+  39: 4, // B) Without words
+  40: 2, // D) Facial expressions
+  41: 0, // C) Integration
+  42: 3, // C) Social media
+  43: 2, // B) Gap
+  44: 3, // C) Memes
+  45: 1, // B) Translate/Analyze
+  46: 2, // C) Digital tools
+  47: 2, // C) TikTok
+  48: 1, // C) 3D scanning
+  49: 2, // C) Social media (Duplicate)
+  50: 1, // C) Integration (Duplicate)
+  51: 3, // B) Archiving
+  52: 4, // C) Semiotics Study
+  53: 2, // C) Saussure
+  54: 1, // C) Media
+  55: 3, // B) Icon Index Symbol
+  56: 0, // C) Orkhon
+  57: 3, // C) Nomadic
+  58: 1, // C) Earliest written
+  59: 2, // C) Sky deity
+  60: 0, // C) Tent
+  61: 4, // B) Dombra
+  62: 3, // C) Preserved history
+  63: 1, // D) Kyrgyz
+  64: 3, // B) Ottoman (Mongol is not Turkic)
+  65: 3, // C) Shamanism
+  66: 2, // B. Merging
+  67: 3, // B. Al-Farabi
+  68: 0, // C. Abai
+  69: 3, // B. Power/Freedom
+  70: 3, // B. Kenesary
+  71: 2, // Inculturation
+  72: 4, // Subculture
+  73: 1, // Popular
+  74: 0, // 2017
+  75: 3, // 2004
+  76: 0, // Diwan-i Hikmat
+};
+
+export const QUESTIONS_CULTUROLOGY = parseQuestions(CULTUROLOGY_RAW_DATA, CULTUROLOGY_ANSWER_KEY);

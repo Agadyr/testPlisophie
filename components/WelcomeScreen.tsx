@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, GraduationCap, Clock, Award, Brain, ArrowRight } from 'lucide-react';
+import { BookOpen, GraduationCap, Clock, Award, Brain, ArrowRight, Globe, Layers } from 'lucide-react';
 import { Subject } from '../types';
 
 interface WelcomeScreenProps {
@@ -30,8 +30,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
                     <button
                         onClick={() => setSubject('philosophy')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${subject === 'philosophy'
-                                ? 'bg-white text-brand-700 shadow-md border-brand-100 ring-2 ring-brand-500 ring-offset-2'
-                                : 'bg-transparent text-gray-400 hover:text-gray-600'
+                            ? 'bg-white text-brand-700 shadow-md border-brand-100 ring-2 ring-brand-500 ring-offset-2'
+                            : 'bg-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
                         <BookOpen size={20} />
@@ -40,12 +40,32 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart }) => {
                     <button
                         onClick={() => setSubject('psychology')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${subject === 'psychology'
-                                ? 'bg-white text-purple-700 shadow-md border-purple-100 ring-2 ring-purple-500 ring-offset-2'
-                                : 'bg-transparent text-gray-400 hover:text-gray-600'
+                            ? 'bg-white text-purple-700 shadow-md border-purple-100 ring-2 ring-purple-500 ring-offset-2'
+                            : 'bg-transparent text-gray-400 hover:text-gray-600'
                             }`}
                     >
                         <Brain size={20} />
                         Psychology
+                    </button>
+                    <button
+                        onClick={() => setSubject('culturology')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${subject === 'culturology'
+                            ? 'bg-white text-emerald-700 shadow-md border-emerald-100 ring-2 ring-emerald-500 ring-offset-2'
+                            : 'bg-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <Globe size={20} />
+                        Culturology
+                    </button>
+                    <button
+                        onClick={() => setSubject('mixed')}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition-all ${subject === 'mixed'
+                            ? 'bg-white text-indigo-700 shadow-md border-indigo-100 ring-2 ring-indigo-500 ring-offset-2'
+                            : 'bg-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        <Layers size={20} />
+                        Mixed
                     </button>
                 </div>
 

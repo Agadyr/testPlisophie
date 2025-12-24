@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { QUESTIONS_PHILOSOPHY, QUESTIONS_PSYCHOLOGY } from './constants';
+import { QUESTIONS_PHILOSOPHY, QUESTIONS_PSYCHOLOGY, QUESTIONS_CULTUROLOGY } from './constants';
 import { QuizState, AIAnalysis, Question, Subject } from './types';
 import { QuestionCard } from './components/QuestionCard';
 import { QuizResults } from './components/QuizResults';
@@ -8,7 +8,7 @@ import { StatsSidebar } from './components/StatsSidebar';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { analyzeQuestion } from './services/geminiService';
-import { Settings, GraduationCap, RotateCcw, ArrowRight, ArrowLeft, Brain, BookOpen, Clock, Home } from 'lucide-react';
+import { Settings, GraduationCap, RotateCcw, ArrowRight, ArrowLeft, Brain, BookOpen, Clock, Home, Globe, Layers } from 'lucide-react';
 
 const BATCH_SIZE = 15;
 
@@ -66,14 +66,31 @@ const App: React.FC = () => {
     setGameMode(mode);
     setSubject(selectedSubject);
 
-    const rawQuestions = selectedSubject === 'psychology' ? QUESTIONS_PSYCHOLOGY : QUESTIONS_PHILOSOPHY;
-    let initialQuestions = shuffleArray(rawQuestions);
+    let finalQuestions: Question[] = [];
 
-    if (mode === 'EXAM') {
-      initialQuestions = initialQuestions.slice(0, 40);
+    if (mode === 'EXAM' && selectedSubject === 'mixed') {
+      // Exam Mode Mixed: 20 Psychology + 20 Culturology
+      const psychQuestions = shuffleArray(QUESTIONS_PSYCHOLOGY).slice(0, 20);
+      const cultQuestions = shuffleArray(QUESTIONS_CULTUROLOGY).slice(0, 20);
+      finalQuestions = shuffleArray([...psychQuestions, ...cultQuestions]);
+    } else {
+      let rawQuestions: Question[];
+      if (selectedSubject === 'psychology') rawQuestions = QUESTIONS_PSYCHOLOGY;
+      else if (selectedSubject === 'culturology') rawQuestions = QUESTIONS_CULTUROLOGY;
+      else if (selectedSubject === 'mixed') {
+        // Practice Mixed: Combined pool
+        rawQuestions = [...QUESTIONS_PSYCHOLOGY, ...QUESTIONS_CULTUROLOGY];
+      }
+      else rawQuestions = QUESTIONS_PHILOSOPHY;
+
+      let initialQuestions = shuffleArray(rawQuestions);
+      if (mode === 'EXAM') {
+        initialQuestions = initialQuestions.slice(0, 40);
+      }
+      finalQuestions = initialQuestions;
     }
 
-    setQuestions(initialQuestions);
+    setQuestions(finalQuestions);
     setAppMode('QUIZ');
     setQuizState({
       currentQuestionIndex: 0,
@@ -314,10 +331,28 @@ const App: React.FC = () => {
     }
 
     const targetSubject = newSubject || subject;
-    const rawQuestions = targetSubject === 'psychology' ? QUESTIONS_PSYCHOLOGY : QUESTIONS_PHILOSOPHY;
 
-    // Default to Practice behavior if switched mid-game via tabs
-    setQuestions(shuffleArray(rawQuestions));
+    let finalQuestions: Question[] = [];
+
+    if (gameMode === 'EXAM' && targetSubject === 'mixed') {
+      const psychQuestions = shuffleArray(QUESTIONS_PSYCHOLOGY).slice(0, 20);
+      const cultQuestions = shuffleArray(QUESTIONS_CULTUROLOGY).slice(0, 20);
+      finalQuestions = shuffleArray([...psychQuestions, ...cultQuestions]);
+    } else {
+      let rawQuestions: Question[];
+      if (targetSubject === 'psychology') rawQuestions = QUESTIONS_PSYCHOLOGY;
+      else if (targetSubject === 'culturology') rawQuestions = QUESTIONS_CULTUROLOGY;
+      else if (targetSubject === 'mixed') rawQuestions = [...QUESTIONS_PSYCHOLOGY, ...QUESTIONS_CULTUROLOGY];
+      else rawQuestions = QUESTIONS_PHILOSOPHY;
+
+      let initialQuestions = shuffleArray(rawQuestions);
+      if (gameMode === 'EXAM') {
+        initialQuestions = initialQuestions.slice(0, 40);
+      }
+      finalQuestions = initialQuestions;
+    }
+
+    setQuestions(finalQuestions);
     setQuizState({
       currentQuestionIndex: 0,
       userAnswers: {},
@@ -394,6 +429,26 @@ const App: React.FC = () => {
               >
                 <Brain size={16} />
                 <span className="hidden xs:inline">Psychology</span>
+              </button>
+              <button
+                onClick={() => setSubject('culturology')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${subject === 'culturology'
+                  ? 'bg-white text-emerald-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <Globe size={16} />
+                <span className="hidden xs:inline">Culturology</span>
+              </button>
+              <button
+                onClick={() => setSubject('mixed')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${subject === 'mixed'
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <Layers size={16} />
+                <span className="hidden xs:inline">Mixed</span>
               </button>
             </div>
           </div>
